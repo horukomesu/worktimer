@@ -1,0 +1,11 @@
+{
+  "work_duration": 25,
+  "short_break_duration": 5,
+  "long_break_duration": 15,
+  "sessions_until_long_break": 4,
+  "current_theme": "dark",
+  "opacity": 1.0,
+  "pin_on_top": false,
+  "selected_sound": "Gachi AAA.mp3",
+  "sound_volume": 0.1
+}
