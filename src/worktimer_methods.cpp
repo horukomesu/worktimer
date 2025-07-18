@@ -1,6 +1,5 @@
 #include "worktimer.h"
 #include <QApplication>
-#include <QStyleSheet>
 #include <QDebug>
 
 // Timer control methods
@@ -65,6 +64,9 @@ void WorkTimer::timerFinished()
     }
     
     updateDisplay();
+    
+    // Automatically start the next timer after a short delay
+    QTimer::singleShot(2000, this, &WorkTimer::startTimer);
 }
 
 void WorkTimer::toggleSettings()
@@ -154,9 +156,13 @@ void WorkTimer::updateVolume(int value)
 {
     m_soundVolume = value / 100.0;
     m_audioOutput->setVolume(m_soundVolume);
-    // Play preview sound
-    playNotificationSound();
     saveSettings();
+}
+
+void WorkTimer::playVolumePreview()
+{
+    // Play preview sound only when slider is released
+    playNotificationSound();
 }
 
 void WorkTimer::applyStylesheet()

@@ -12,7 +12,6 @@
 #include <QFile>
 #include <QDir>
 #include <QStringList>
-#include <QUrl>
 #include <QMessageBox>
 #include <QDebug>
 
@@ -78,19 +77,19 @@ void WorkTimer::loadSettings()
     QJsonObject settings;
     if (Settings::loadSettings(m_settingsFile, settings)) {
         // Load timer settings
-        m_workDuration = settings.value("work_duration", 25).toInt();
-        m_shortBreakDuration = settings.value("short_break_duration", 5).toInt();
-        m_longBreakDuration = settings.value("long_break_duration", 15).toInt();
-        m_sessionsUntilLongBreak = settings.value("sessions_until_long_break", 4).toInt();
+        m_workDuration = settings.value("work_duration").toInt(25);
+        m_shortBreakDuration = settings.value("short_break_duration").toInt(5);
+        m_longBreakDuration = settings.value("long_break_duration").toInt(15);
+        m_sessionsUntilLongBreak = settings.value("sessions_until_long_break").toInt(4);
         
         // Load appearance settings
-        m_currentTheme = settings.value("current_theme", "dark").toString();
-        m_opacity = settings.value("opacity", 1.0).toDouble();
-        m_pinOnTop = settings.value("pin_on_top", true).toBool();
+        m_currentTheme = settings.value("current_theme").toString("dark");
+        m_opacity = settings.value("opacity").toDouble(1.0);
+        m_pinOnTop = settings.value("pin_on_top").toBool(true);
         
         // Load sound settings
-        m_selectedSound = settings.value("selected_sound", "Happy bells notification.mp3").toString();
-        m_soundVolume = settings.value("sound_volume", 0.5).toDouble();
+        m_selectedSound = settings.value("selected_sound").toString("Happy bells notification.mp3");
+        m_soundVolume = settings.value("sound_volume").toDouble(0.5);
         
         // Apply settings
         m_audioOutput->setVolume(m_soundVolume);
@@ -310,6 +309,7 @@ void WorkTimer::initUI()
     m_volumeSlider->setRange(0, 100);
     m_volumeSlider->setValue(int(m_soundVolume * 100));
     connect(m_volumeSlider, &QSlider::valueChanged, this, &WorkTimer::updateVolume);
+    connect(m_volumeSlider, &QSlider::sliderReleased, this, &WorkTimer::playVolumePreview);
     settingsLayout->addWidget(m_volumeSlider, 8, 1);
     
     layout->addWidget(m_settingsGroup);

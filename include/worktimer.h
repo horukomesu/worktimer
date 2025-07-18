@@ -54,6 +54,7 @@ private slots:
     void updatePinOnTop(int state);
     void updateSound(const QString &soundName);
     void updateVolume(int value);
+    void playVolumePreview();
 
 private:
     void initUI();

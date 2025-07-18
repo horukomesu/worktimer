@@ -1,6 +1,22 @@
 @echo off
 echo Building WorkTimer Installer...
 
+REM Check if the executable exists in Release directory
+if not exist "build\bin\Release\WorkTimer.exe" (
+    echo Error: WorkTimer.exe not found in build\bin\Release!
+    echo Please build the project first using build_cpp.bat
+    pause
+    exit /b 1
+)
+
+REM Check if Qt dependencies are deployed
+if not exist "build\bin\Release\Qt6Core.dll" (
+    echo Warning: Qt dependencies not found in Release directory!
+    echo Please run deploy_qt.bat first
+    pause
+    exit /b 1
+)
+
 REM Try to find Inno Setup Compiler
 set "ISCC_PATH="
 

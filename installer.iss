@@ -28,8 +28,21 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "dist\WorkTimer.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "sounds\*"; DestDir: "{app}\sounds"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\bin\Release\WorkTimer.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\Qt6Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\Qt6Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\Qt6Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\Qt6Multimedia.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\Qt6Network.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\avcodec-61.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\avformat-61.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\avutil-59.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\swresample-5.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\swscale-8.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\bin\Release\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\bin\Release\styles\*"; DestDir: "{app}\styles"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\bin\Release\multimedia\*"; DestDir: "{app}\multimedia"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\bin\Release\sounds\*"; DestDir: "{app}\sounds"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\WorkTimer"; Filename: "{app}\WorkTimer.exe"
