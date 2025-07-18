@@ -40,8 +40,12 @@ set(HEADERS
     include/settings.h
 )
 
+set(RESOURCES
+    resources.qrc
+)
+
 # Create executable
-add_executable(WorkTimer ${SOURCES} ${HEADERS})
+add_executable(WorkTimer ${SOURCES} ${HEADERS} ${RESOURCES})
 
 # Enable Qt MOC
 set_target_properties(WorkTimer PROPERTIES
@@ -74,6 +78,25 @@ if(WIN32)
         WIN32_EXECUTABLE TRUE
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     )
+    
+    # Set application icon for Windows
+    set_target_properties(WorkTimer PROPERTIES
+        WIN32_EXECUTABLE TRUE
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    
+    # Add icon to executable
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/worktimer_icon.ico")
+        set_target_properties(WorkTimer PROPERTIES
+            WIN32_EXECUTABLE TRUE
+            VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        )
+        
+        # Create Windows resource file for icon
+        set(ICON_RC "${CMAKE_BINARY_DIR}/icon.rc")
+        file(WRITE ${ICON_RC} "IDI_ICON1 ICON \"${CMAKE_SOURCE_DIR}/resources/worktimer_icon.ico\"")
+        target_sources(WorkTimer PRIVATE ${ICON_RC})
+    endif()
     
     # Copy sounds folder to output
     add_custom_command(TARGET WorkTimer POST_BUILD

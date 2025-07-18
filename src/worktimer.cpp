@@ -22,6 +22,9 @@ WorkTimer::WorkTimer(QWidget *parent)
     setGeometry(100, 100, 300, 280);
     setMinimumSize(280, 250);
     
+    // Set window icon
+    setWindowIcon(QIcon(":/worktimer_icon.ico"));
+    
     // Make window a desktop widget
     m_baseFlags = Qt::FramelessWindowHint | Qt::Tool;
     setWindowFlags(m_baseFlags | Qt::WindowStaysOnTopHint);
