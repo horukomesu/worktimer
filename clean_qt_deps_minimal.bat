@@ -5,7 +5,6 @@ REM Check if Release directory exists
 if not exist "build\bin\Release" (
     echo Error: Release directory not found!
     echo Please run build_cpp.bat first
-    pause
     exit /b 1
 )
 
@@ -34,6 +33,4 @@ echo Remaining files in Release directory:
 dir /B "build\bin\Release\*.dll"
 echo.
 echo Total size after cleanup:
-dir "build\bin\Release" | find "File(s)"
-
-pause 
+dir "build\bin\Release" | find "File(s)" 

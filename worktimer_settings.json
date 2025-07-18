@@ -1,7 +1,7 @@
 {
-    "current_theme": "light",
+    "blur_effect": true,
+    "current_theme": "dark",
     "long_break_duration": 15,
-    "opacity": 1,
     "pin_on_top": false,
     "selected_sound": "Gachi AAA.mp3",
     "sessions_until_long_break": 4,

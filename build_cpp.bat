@@ -11,7 +11,6 @@ cmake .. -G "Visual Studio 17 2022" -A x64
 
 if %ERRORLEVEL% NEQ 0 (
     echo CMake configuration failed!
-    pause
     exit /b 1
 )
 
@@ -21,7 +20,6 @@ cmake --build . --config Release
 
 if %ERRORLEVEL% NEQ 0 (
     echo Build failed!
-    pause
     exit /b 1
 )
 
@@ -38,7 +36,6 @@ call deploy_qt_optimized.bat
 
 if %ERRORLEVEL% NEQ 0 (
     echo Qt deployment failed!
-    pause
     exit /b 1
 )
 
@@ -62,5 +59,4 @@ echo Sounds folder copied to Release directory.
 echo.
 echo Ready to run: build\bin\Release\WorkTimer.exe
 echo.
-echo Note: This is now a standalone executable with minimal Qt dependencies in Release directory!
-pause 
+echo Note: This is now a standalone executable with minimal Qt dependencies in Release directory! 

@@ -5,7 +5,6 @@ REM Check if build exists
 if not exist "build\bin\Release\WorkTimer.exe" (
     echo Error: WorkTimer.exe not found!
     echo Please build the project first using build_cpp.bat
-    pause
     exit /b 1
 )
 
@@ -20,7 +19,6 @@ if exist "C:\Qt\6.9.1\msvc2022_64\bin\windeployqt.exe" (
 ) else (
     echo Error: windeployqt not found!
     echo Please check your Qt installation.
-    pause
     exit /b 1
 )
 
@@ -61,6 +59,4 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo.
     echo Error: Failed to deploy Qt dependencies!
-)
-
-pause 
+) 

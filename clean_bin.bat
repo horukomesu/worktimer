@@ -5,7 +5,6 @@ REM Check if build\bin exists
 if not exist "build\bin" (
     echo Error: build\bin directory not found!
     echo Please build the project first using build_cpp.bat
-    pause
     exit /b 1
 )
 
@@ -28,6 +27,4 @@ echo.
 echo Cleanup completed!
 echo.
 echo Files remaining in build\bin:
-dir /B "build\bin"
-
-pause 
+dir /B "build\bin" 
