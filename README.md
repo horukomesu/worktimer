@@ -1,4 +1,6 @@
 # WorkTimer
+<img width="316" height="260" alt="image" src="https://github.com/user-attachments/assets/58ee1426-fb32-4d2f-9221-75d2e9ef031b" />
+<img width="307" height="521" alt="image" src="https://github.com/user-attachments/assets/ecd50239-629d-4b1b-a61e-010ebc4f8997" />
 
 Таймер Помодоро для Windows с современным интерфейсом.
 
