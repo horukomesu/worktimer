@@ -86,6 +86,15 @@ void WorkTimer::toggleSettings(bool checked)
         return;
     }
     
+    // Prevent multiple clicks during animation
+    if (m_isAnimating) {
+        return;
+    }
+    
+    // Block the button during animation
+    m_toggleSettingsButton->setEnabled(false);
+    m_isAnimating = true;
+    
     if (checked) {
         // Show settings first
         m_settingsGroup->show();
@@ -111,7 +120,13 @@ void WorkTimer::toggleSettings(bool checked)
         
         // Update UI state
         m_settingsVisible = true;
-        m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settingsON.svg"));
+        
+        // Re-enable button when animation finishes
+        connect(m_animationGroup, &QParallelAnimationGroup::finished, this, [this]() {
+            m_toggleSettingsButton->setEnabled(true);
+            m_isAnimating = false;
+            updateAllIcons(); // Update icons after animation
+        }, Qt::SingleShotConnection);
     } else {
         // Animate window contraction
         QRect currentWindowGeometry = geometry();
@@ -128,11 +143,14 @@ void WorkTimer::toggleSettings(bool checked)
         m_settingsAnimation->setStartValue(startSettingsGeometry);
         m_settingsAnimation->setEndValue(endSettingsGeometry);
         
-        // Connect animation finished signal to hide settings
+        // Connect animation finished signal to hide settings and re-enable button
         connect(m_animationGroup, &QParallelAnimationGroup::finished, this, [this]() {
             if (m_settingsGroup) {
                 m_settingsGroup->hide();
             }
+            m_toggleSettingsButton->setEnabled(true);
+            m_isAnimating = false;
+            updateAllIcons(); // Update icons after animation
             m_animationGroup->disconnect(); // Disconnect to avoid multiple calls
         }, Qt::SingleShotConnection);
         
@@ -141,7 +159,6 @@ void WorkTimer::toggleSettings(bool checked)
         
         // Update UI state
         m_settingsVisible = false;
-        m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settings.svg"));
     }
 }
 
@@ -193,15 +210,13 @@ void WorkTimer::updateTheme(const QString &theme)
         m_themeButton->setIcon(QIcon(":/new/buttons/ui/light.svg"));
     }
     
+    // Update all icons based on theme
+    updateAllIcons();
+    
     saveSettings();
 }
 
-void WorkTimer::updateOpacity(int value)
-{
-    m_opacity = value / 100.0;
-    setWindowOpacity(m_opacity);
-    saveSettings();
-}
+
 
 void WorkTimer::updatePinOnTop(int state)
 {
@@ -213,6 +228,83 @@ void WorkTimer::updatePinOnTop(int state)
     }
     show(); // Recreate window with new flags
     saveSettings();
+}
+
+
+
+void WorkTimer::updateAllIcons()
+{
+    if (m_currentTheme == "dark") {
+        // Use white icons for dark theme
+        if (m_startButton) {
+            m_startButton->setIcon(QIcon(":/new/buttons/ui/play_white.svg"));
+        }
+        if (m_pauseButton) {
+            m_pauseButton->setIcon(QIcon(":/new/buttons/ui/pause_white.svg"));
+        }
+        if (m_resetButton) {
+            m_resetButton->setIcon(QIcon(":/new/buttons/ui/stop_white.svg"));
+        }
+        if (m_restartButton) {
+            m_restartButton->setIcon(QIcon(":/new/buttons/ui/restart_white.svg"));
+        }
+        if (m_toggleSettingsButton) {
+            if (m_settingsVisible) {
+                m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settingsON_white.svg"));
+            } else {
+                m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settings_white.svg"));
+            }
+        }
+        if (m_closeButton) {
+            m_closeButton->setIcon(QIcon(":/new/buttons/ui/exit_white.svg"));
+        }
+        
+        // Update label pixmaps for dark theme
+        QLabel* soundLabel = m_uiWidget->findChild<QLabel*>("soundLabel");
+        if (soundLabel) {
+            soundLabel->setPixmap(QPixmap(":/new/buttons/ui/music_white.svg"));
+        }
+        
+        QLabel* volumeLabel = m_uiWidget->findChild<QLabel*>("volumeLabel");
+        if (volumeLabel) {
+            volumeLabel->setPixmap(QPixmap(":/new/buttons/ui/volume_white.svg"));
+        }
+    } else {
+        // Use original icons for light theme
+        if (m_startButton) {
+            m_startButton->setIcon(QIcon(":/new/buttons/ui/play.svg"));
+        }
+        if (m_pauseButton) {
+            m_pauseButton->setIcon(QIcon(":/new/buttons/ui/pause.svg"));
+        }
+        if (m_resetButton) {
+            m_resetButton->setIcon(QIcon(":/new/buttons/ui/stop.svg"));
+        }
+        if (m_restartButton) {
+            m_restartButton->setIcon(QIcon(":/new/buttons/ui/restart.svg"));
+        }
+        if (m_toggleSettingsButton) {
+            if (m_settingsVisible) {
+                m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settingsON.svg"));
+            } else {
+                m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settings.svg"));
+            }
+        }
+        if (m_closeButton) {
+            m_closeButton->setIcon(QIcon(":/new/buttons/ui/exit.svg"));
+        }
+        
+        // Update label pixmaps for light theme
+        QLabel* soundLabel = m_uiWidget->findChild<QLabel*>("soundLabel");
+        if (soundLabel) {
+            soundLabel->setPixmap(QPixmap(":/new/buttons/ui/music.svg"));
+        }
+        
+        QLabel* volumeLabel = m_uiWidget->findChild<QLabel*>("volumeLabel");
+        if (volumeLabel) {
+            volumeLabel->setPixmap(QPixmap(":/new/buttons/ui/volume.svg"));
+        }
+    }
 }
 
 void WorkTimer::updateSound(const QString &soundName)

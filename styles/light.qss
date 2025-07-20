@@ -53,7 +53,6 @@ QPushButton#startButton {
 QPushButton#startButton:hover {
     background-color: #106ebe;
     border-color: #005a9e;
-    transform: scale(1.05);
 }
 
 QPushButton#startButton:pressed {
@@ -76,7 +75,6 @@ QPushButton#pauseButton {
 QPushButton#pauseButton:hover {
     background-color: #a74109;
     border-color: #8a3508;
-    transform: scale(1.05);
 }
 
 QPushButton#pauseButton:pressed {
@@ -99,7 +97,6 @@ QPushButton#resetButton {
 QPushButton#resetButton:hover {
     background-color: #b02a2e;
     border-color: #8f2225;
-    transform: scale(1.05);
 }
 
 QPushButton#resetButton:pressed {
@@ -122,7 +119,6 @@ QPushButton#restartButton {
 QPushButton#restartButton:hover {
     background-color: #0e6b0e;
     border-color: #0c5a0c;
-    transform: scale(1.05);
 }
 
 QPushButton#restartButton:pressed {

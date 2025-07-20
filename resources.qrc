@@ -17,5 +17,14 @@
         <file>ui/music.svg</file>
         <file>ui/volume.svg</file>
         <file>ui/settingsON.svg</file>
+        <file>ui/exit_white.svg</file>
+        <file>ui/pause_white.svg</file>
+        <file>ui/play_white.svg</file>
+        <file>ui/restart_white.svg</file>
+        <file>ui/stop_white.svg</file>
+        <file>ui/settings_white.svg</file>
+        <file>ui/music_white.svg</file>
+        <file>ui/volume_white.svg</file>
+        <file>ui/settingsON_white.svg</file>
     </qresource>
 </RCC>

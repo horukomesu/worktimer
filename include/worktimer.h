@@ -55,8 +55,8 @@ private slots:
     void updateLongBreakDuration(int value);
     void updateSessionsUntilLongBreak(int value);
     void updateTheme(const QString &theme);
-    void updateOpacity(int value);
     void updatePinOnTop(int state);
+    void updateAllIcons();
     void updateSound(const QString &soundName);
     void updateVolume(int value);
     void playVolumePreview();
@@ -84,7 +84,6 @@ private:
     
     // Appearance settings
     QString m_currentTheme = "dark";
-    double m_opacity = 1.0;
     bool m_pinOnTop = true;
     
     // Sound settings
@@ -127,7 +126,6 @@ private:
     QSpinBox *m_shortBreakSpinbox;
     QSpinBox *m_longBreakSpinbox;
     QSpinBox *m_sessionsSpinbox;
-    QSlider *m_opacitySlider;
     QCheckBox *m_pinCheckbox;
     QComboBox *m_soundCombo;
     QSlider *m_volumeSlider;
@@ -136,6 +134,7 @@ private:
     QPropertyAnimation *m_windowAnimation;
     QPropertyAnimation *m_settingsAnimation;
     QParallelAnimationGroup *m_animationGroup;
-    int m_settingsWidth = 250;
-    int m_baseWindowWidth = 280;
+    bool m_isAnimating = false;
+    int m_settingsWidth = 280;
+    int m_baseWindowWidth = 342;
 }; 

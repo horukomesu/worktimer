@@ -77,6 +77,7 @@ WorkTimer::WorkTimer(QWidget *parent)
     loadSounds();
     setupUI();
     applyStylesheet();
+    updateAllIcons();
 }
 
 WorkTimer::~WorkTimer()
@@ -120,7 +121,6 @@ void WorkTimer::loadSettings()
         
         // Load appearance settings
         m_currentTheme = settings.value("current_theme").toString("dark");
-        m_opacity = settings.value("opacity").toDouble(1.0);
         m_pinOnTop = settings.value("pin_on_top").toBool(true);
         
         // Load sound settings
@@ -149,7 +149,6 @@ void WorkTimer::saveSettings()
     
     // Appearance settings
     settings["current_theme"] = m_currentTheme;
-    settings["opacity"] = m_opacity;
     settings["pin_on_top"] = m_pinOnTop;
     
     // Sound settings
@@ -223,28 +222,11 @@ void WorkTimer::setupUI()
     m_shortBreakSpinbox = m_uiWidget->findChild<QSpinBox*>("shortBreakSpinbox");
     m_longBreakSpinbox = m_uiWidget->findChild<QSpinBox*>("longBreakSpinbox");
     m_sessionsSpinbox = m_uiWidget->findChild<QSpinBox*>("sessionsSpinbox");
-    m_opacitySlider = m_uiWidget->findChild<QSlider*>("opacitySlider");
     m_pinCheckbox = m_uiWidget->findChild<QCheckBox*>("pinCheckbox");
     m_soundCombo = m_uiWidget->findChild<QComboBox*>("soundCombo");
     m_volumeSlider = m_uiWidget->findChild<QSlider*>("volumeSlider");
     
-    // Check if all UI elements were found
-    if (!m_timeLabel || !m_sessionLabel || !m_startButton || !m_pauseButton || 
-        !m_resetButton || !m_restartButton || !m_toggleSettingsButton || !m_closeButton || 
-        !m_themeButton || !m_settingsGroup ||
-        !m_workSpinbox || !m_shortBreakSpinbox || !m_longBreakSpinbox ||
-        !m_sessionsSpinbox || !m_opacitySlider || !m_pinCheckbox ||
-        !m_soundCombo || !m_volumeSlider) {
-        qDebug() << "Some UI elements not found!";
-        qDebug() << "timeLabel:" << (m_timeLabel ? "FOUND" : "NOT FOUND");
-        qDebug() << "startButton:" << (m_startButton ? "FOUND" : "NOT FOUND");
-        qDebug() << "restartButton:" << (m_restartButton ? "FOUND" : "NOT FOUND");
-        qDebug() << "themeButton:" << (m_themeButton ? "FOUND" : "NOT FOUND");
-        qDebug() << "settingsGroup:" << (m_settingsGroup ? "FOUND" : "NOT FOUND");
-        return;
-    }
     
-    qDebug() << "All UI elements found successfully!";
     
     // Set initial values
     m_timeLabel->setText(formatTime(m_timeRemaining));
@@ -257,7 +239,6 @@ void WorkTimer::setupUI()
     m_sessionsSpinbox->setValue(m_sessionsUntilLongBreak);
     
     // Set slider values
-    m_opacitySlider->setValue(int(m_opacity * 100));
     m_volumeSlider->setValue(int(m_soundVolume * 100));
     
     // Set checkbox state
@@ -295,7 +276,6 @@ void WorkTimer::setupUI()
     connect(m_longBreakSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateLongBreakDuration);
     connect(m_sessionsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateSessionsUntilLongBreak);
     
-    connect(m_opacitySlider, &QSlider::valueChanged, this, &WorkTimer::updateOpacity);
     connect(m_pinCheckbox, &QCheckBox::stateChanged, this, &WorkTimer::updatePinOnTop);
     connect(m_soundCombo, &QComboBox::currentTextChanged, this, &WorkTimer::updateSound);
     connect(m_volumeSlider, &QSlider::valueChanged, this, &WorkTimer::updateVolume);
