@@ -22,6 +22,10 @@
 #include <QStringList>
 #include <QFont>
 #include <QMouseEvent>
+#include <QUiLoader>
+#include <QWidget>
+#include <QPropertyAnimation>
+#include <QParallelAnimationGroup>
 
 class WorkTimer : public QMainWindow
 {
@@ -40,9 +44,10 @@ private slots:
     void startTimer();
     void pauseTimer();
     void resetTimer();
+    void restartTimer();
     void updateTimer();
     void timerFinished();
-    void toggleSettings();
+    void toggleSettings(bool checked = false);
     void closeApplication();
     
     void updateWorkDuration(int value);
@@ -57,7 +62,7 @@ private slots:
     void playVolumePreview();
 
 private:
-    void initUI();
+    void setupUI();
     void applyStylesheet();
     void loadSettings();
     void saveSettings();
@@ -103,15 +108,19 @@ private:
     QMediaPlayer *m_mediaPlayer;
     QAudioOutput *m_audioOutput;
     
+    // UI widget loaded from .ui file
+    QWidget *m_uiWidget;
+    
+    // UI elements loaded from .ui file
     QLabel *m_timeLabel;
     QLabel *m_sessionLabel;
     QPushButton *m_startButton;
     QPushButton *m_pauseButton;
     QPushButton *m_resetButton;
+    QPushButton *m_restartButton;
     QPushButton *m_toggleSettingsButton;
     QPushButton *m_closeButton;
-    QPushButton *m_darkThemeButton;
-    QPushButton *m_lightThemeButton;
+    QPushButton *m_themeButton;
     
     QGroupBox *m_settingsGroup;
     QSpinBox *m_workSpinbox;
@@ -122,4 +131,11 @@ private:
     QCheckBox *m_pinCheckbox;
     QComboBox *m_soundCombo;
     QSlider *m_volumeSlider;
+    
+    // Animation
+    QPropertyAnimation *m_windowAnimation;
+    QPropertyAnimation *m_settingsAnimation;
+    QParallelAnimationGroup *m_animationGroup;
+    int m_settingsWidth = 250;
+    int m_baseWindowWidth = 280;
 }; 

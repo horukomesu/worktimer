@@ -1,6 +1,21 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
-    <qresource>
+<RCC>
+    <qresource prefix="/">
         <file>resources/worktimer_icon.ico</file>
+        <file>ui/worktimer.ui</file>
+        <file>styles/dark.qss</file>
+        <file>styles/light.qss</file>
     </qresource>
-</RCC> 
+    <qresource prefix="/new/buttons">
+        <file>ui/exit.svg</file>
+        <file>ui/pause.svg</file>
+        <file>ui/play.svg</file>
+        <file>ui/restart.svg</file>
+        <file>ui/stop.svg</file>
+        <file>ui/settings.svg</file>
+        <file>ui/dark.svg</file>
+        <file>ui/light.svg</file>
+        <file>ui/music.svg</file>
+        <file>ui/volume.svg</file>
+        <file>ui/settingsON.svg</file>
+    </qresource>
+</RCC>

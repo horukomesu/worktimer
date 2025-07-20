@@ -4,23 +4,14 @@ project(WorkTimer VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Qt6 configuration
-set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/msvc2022_64")
-
-# Try Qt6 first, then Qt5 as fallback
-find_package(Qt6 QUIET COMPONENTS Core Widgets Multimedia)
-if(Qt6_FOUND)
-    message(STATUS "Found Qt6")
-    set(QT_VERSION 6)
-else()
-    find_package(Qt5 REQUIRED COMPONENTS Core Widgets Multimedia)
-    if(Qt5_FOUND)
-        message(STATUS "Found Qt5")
-        set(QT_VERSION 5)
-    else()
-        message(FATAL_ERROR "Neither Qt6 nor Qt5 found. Please install Qt6 or Qt5.")
-    endif()
+# Qt6 configuration - will be overridden by CMakePresets.json in Qt Creator
+if(NOT DEFINED CMAKE_PREFIX_PATH)
+    set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/msvc2022_64")
 endif()
+
+# Find Qt6 (required for Qt Creator 11)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Multimedia UiTools)
+message(STATUS "Found Qt6: ${Qt6_VERSION}")
 
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -44,8 +35,12 @@ set(RESOURCES
     resources.qrc
 )
 
+set(UI_FILES
+    ui/worktimer.ui
+)
+
 # Create executable
-add_executable(WorkTimer ${SOURCES} ${HEADERS} ${RESOURCES})
+add_executable(WorkTimer ${SOURCES} ${HEADERS} ${RESOURCES} ${UI_FILES})
 
 # Enable Qt MOC
 set_target_properties(WorkTimer PROPERTIES
@@ -54,23 +49,21 @@ set_target_properties(WorkTimer PROPERTIES
     AUTORCC ON
 )
 
+# Add UI files to AUTOUIC
+set_target_properties(WorkTimer PROPERTIES
+    AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/ui"
+)
+
 # Include directories
 target_include_directories(WorkTimer PRIVATE include)
 
-# Link Qt libraries
-if(QT_VERSION EQUAL 6)
-    target_link_libraries(WorkTimer PRIVATE
-        Qt6::Core
-        Qt6::Widgets
-        Qt6::Multimedia
-    )
-else()
-    target_link_libraries(WorkTimer PRIVATE
-        Qt5::Core
-        Qt5::Widgets
-        Qt5::Multimedia
-    )
-endif()
+# Link Qt6 libraries
+target_link_libraries(WorkTimer PRIVATE
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Multimedia
+    Qt6::UiTools
+)
 
 # Windows specific settings
 if(WIN32)
@@ -105,39 +98,21 @@ if(WIN32)
         ${CMAKE_BINARY_DIR}/bin/sounds
     )
     
-    # Deploy Qt dependencies using windeployqt
-    if(QT_VERSION EQUAL 6)
-        find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")
-        if(WINDEPLOYQT_EXECUTABLE)
-            add_custom_command(TARGET WorkTimer POST_BUILD
-                COMMAND ${WINDEPLOYQT_EXECUTABLE}
-                    --no-compiler-runtime
-                    --no-translations
-                    --no-system-d3d-compiler
-                    --no-opengl-sw
-                    --dir "${CMAKE_BINARY_DIR}/bin"
-                    "$<TARGET_FILE:WorkTimer>"
-                COMMENT "Deploying Qt6 dependencies with windeployqt"
-            )
-        else()
-            message(WARNING "windeployqt not found. Qt dependencies may be missing.")
-        endif()
+    # Deploy Qt6 dependencies using windeployqt
+    find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")
+    if(WINDEPLOYQT_EXECUTABLE)
+        add_custom_command(TARGET WorkTimer POST_BUILD
+            COMMAND ${WINDEPLOYQT_EXECUTABLE}
+                --no-compiler-runtime
+                --no-translations
+                --no-system-d3d-compiler
+                --no-opengl-sw
+                --dir "${CMAKE_BINARY_DIR}/bin"
+                "$<TARGET_FILE:WorkTimer>"
+            COMMENT "Deploying Qt6 dependencies with windeployqt"
+        )
     else()
-        find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")
-        if(WINDEPLOYQT_EXECUTABLE)
-            add_custom_command(TARGET WorkTimer POST_BUILD
-                COMMAND ${WINDEPLOYQT_EXECUTABLE}
-                    --no-compiler-runtime
-                    --no-translations
-                    --no-system-d3d-compiler
-                    --no-opengl-sw
-                    --dir "${CMAKE_BINARY_DIR}/bin"
-                    "$<TARGET_FILE:WorkTimer>"
-                COMMENT "Deploying Qt5 dependencies with windeployqt"
-            )
-        else()
-            message(WARNING "windeployqt not found. Qt dependencies may be missing.")
-        endif()
+        message(WARNING "windeployqt not found. Qt dependencies may be missing.")
     endif()
 endif()
 

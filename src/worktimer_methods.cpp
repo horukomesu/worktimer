@@ -28,6 +28,16 @@ void WorkTimer::resetTimer()
     updateDisplay();
 }
 
+void WorkTimer::restartTimer()
+{
+    // Reset to first session and start immediately
+    m_currentSession = 1;
+    m_isWorkSession = true;
+    m_timeRemaining = m_workDuration * 60;
+    updateDisplay();
+    startTimer();
+}
+
 void WorkTimer::updateTimer()
 {
     if (m_timeRemaining > 0) {
@@ -69,18 +79,69 @@ void WorkTimer::timerFinished()
     QTimer::singleShot(2000, this, &WorkTimer::startTimer);
 }
 
-void WorkTimer::toggleSettings()
+void WorkTimer::toggleSettings(bool checked)
 {
-    if (m_settingsVisible) {
-        m_settingsGroup->hide();
-        m_settingsVisible = false;
-        m_toggleSettingsButton->setText("⚙");
-        resize(300, 180);
-    } else {
+    if (!m_settingsGroup || !m_windowAnimation || !m_settingsAnimation || !m_animationGroup) {
+        qDebug() << "Animation components not initialized!";
+        return;
+    }
+    
+    if (checked) {
+        // Show settings first
         m_settingsGroup->show();
+        
+        // Animate window expansion
+        QRect currentWindowGeometry = geometry();
+        QRect expandedWindowGeometry = QRect(currentWindowGeometry.x(), currentWindowGeometry.y(), 
+                                           m_baseWindowWidth + m_settingsWidth, currentWindowGeometry.height());
+        
+        m_windowAnimation->setStartValue(currentWindowGeometry);
+        m_windowAnimation->setEndValue(expandedWindowGeometry);
+        
+        // Animate settings panel sliding in from right
+        QRect startSettingsGeometry = QRect(m_baseWindowWidth + m_settingsWidth, 0, m_settingsWidth, height());
+        QRect endSettingsGeometry = QRect(m_baseWindowWidth, 0, m_settingsWidth, height());
+        
+        m_settingsGroup->setGeometry(startSettingsGeometry);
+        m_settingsAnimation->setStartValue(startSettingsGeometry);
+        m_settingsAnimation->setEndValue(endSettingsGeometry);
+        
+        // Start both animations simultaneously
+        m_animationGroup->start();
+        
+        // Update UI state
         m_settingsVisible = true;
-        m_toggleSettingsButton->setText("▼");
-        resize(300, 520);
+        m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settingsON.svg"));
+    } else {
+        // Animate window contraction
+        QRect currentWindowGeometry = geometry();
+        QRect contractedWindowGeometry = QRect(currentWindowGeometry.x(), currentWindowGeometry.y(), 
+                                             m_baseWindowWidth, currentWindowGeometry.height());
+        
+        m_windowAnimation->setStartValue(currentWindowGeometry);
+        m_windowAnimation->setEndValue(contractedWindowGeometry);
+        
+        // Animate settings panel sliding out to right
+        QRect startSettingsGeometry = QRect(m_baseWindowWidth, 0, m_settingsWidth, height());
+        QRect endSettingsGeometry = QRect(m_baseWindowWidth + m_settingsWidth, 0, m_settingsWidth, height());
+        
+        m_settingsAnimation->setStartValue(startSettingsGeometry);
+        m_settingsAnimation->setEndValue(endSettingsGeometry);
+        
+        // Connect animation finished signal to hide settings
+        connect(m_animationGroup, &QParallelAnimationGroup::finished, this, [this]() {
+            if (m_settingsGroup) {
+                m_settingsGroup->hide();
+            }
+            m_animationGroup->disconnect(); // Disconnect to avoid multiple calls
+        }, Qt::SingleShotConnection);
+        
+        // Start both animations simultaneously
+        m_animationGroup->start();
+        
+        // Update UI state
+        m_settingsVisible = false;
+        m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settings.svg"));
     }
 }
 
@@ -124,6 +185,14 @@ void WorkTimer::updateTheme(const QString &theme)
 {
     m_currentTheme = theme;
     applyStylesheet();
+    
+    // Update theme button icon
+    if (m_currentTheme == "dark") {
+        m_themeButton->setIcon(QIcon(":/new/buttons/ui/dark.svg"));
+    } else {
+        m_themeButton->setIcon(QIcon(":/new/buttons/ui/light.svg"));
+    }
+    
     saveSettings();
 }
 
@@ -167,383 +236,25 @@ void WorkTimer::playVolumePreview()
 
 void WorkTimer::applyStylesheet()
 {
+    QString styleFile;
     if (m_currentTheme == "dark") {
-        setStyleSheet(R"(
-            QMainWindow {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #2c3e50, stop:1 #34495e);
-                border: 2px solid #3498db;
-            }
-            
-            QLabel {
-                color: #ecf0f1;
-                font-weight: bold;
-            }
-            
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #3498db, stop:1 #2980b9);
-                border: 2px solid #2980b9;
-                color: white;
-                font-weight: bold;
-                padding: 6px 12px;
-                font-size: 11px;
-                min-width: 70px;
-            }
-            
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #5dade2, stop:1 #3498db);
-                border: 2px solid #5dade2;
-            }
-            
-            QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #2980b9, stop:1 #21618c);
-            }
-            
-            QPushButton:disabled {
-                background: #7f8c8d;
-                border: 2px solid #95a5a6;
-                color: #bdc3c7;
-            }
-            
-            QGroupBox {
-                font-weight: bold;
-                font-size: 12px;
-                color: #ecf0f1;
-                border: 2px solid #7f8c8d;
-                margin-top: 8px;
-                padding-top: 8px;
-                background: rgba(52, 73, 94, 0.8);
-            }
-            
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 6px 0 6px;
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #34495e, stop:1 #2c3e50);
-            }
-            
-            QSpinBox {
-                border: 2px solid #7f8c8d;
-                padding: 3px;
-                background: #34495e;
-                font-weight: bold;
-                color: #ecf0f1;
-            }
-            
-            QSpinBox:focus {
-                border: 2px solid #3498db;
-            }
-            
-            QSpinBox::up-button, QSpinBox::down-button {
-                background: #2c3e50;
-                border: 1px solid #7f8c8d;
-                width: 14px;
-            }
-            
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background: #34495e;
-            }
-            
-            QPushButton#toggle_settings {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #7f8c8d, stop:1 #95a5a6);
-                border: 1px solid #95a5a6;
-                color: white;
-                font-size: 12px;
-                padding: 2px;
-                min-width: 25px;
-                max-width: 25px;
-                min-height: 25px;
-                max-height: 25px;
-            }
-            
-            QPushButton#toggle_settings:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #95a5a6, stop:1 #bdc3c7);
-            }
-            
-            QPushButton#close_button {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #34495e, stop:1 #2c3e50);
-                border: 1px solid #7f8c8d;
-                color: #bdc3c7;
-                font-size: 10px;
-                font-weight: bold;
-                padding: 1px;
-                min-width: 20px;
-                max-width: 20px;
-                min-height: 20px;
-                max-height: 20px;
-            }
-            
-            QPushButton#close_button:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #7f8c8d, stop:1 #95a5a6);
-                border: 1px solid #95a5a6;
-                color: #ecf0f1;
-            }
-            
-            QComboBox {
-                border: 2px solid #7f8c8d;
-                padding: 3px;
-                background: #34495e;
-                color: #ecf0f1;
-            }
-            
-            QComboBox:focus {
-                border: 2px solid #3498db;
-            }
-            
-            QSlider::groove:horizontal {
-                border: 1px solid #7f8c8d;
-                height: 8px;
-                background: #2c3e50;
-            }
-            
-            QSlider::handle:horizontal {
-                background: #3498db;
-                border: 1px solid #2980b9;
-                width: 18px;
-                margin: -2px 0;
-            }
-            
-            QCheckBox {
-                color: #ecf0f1;
-                font-weight: bold;
-            }
-            
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border: 2px solid #7f8c8d;
-                background: #34495e;
-            }
-            
-            QCheckBox::indicator:checked {
-                background: #3498db;
-                border: 2px solid #2980b9;
-            }
-            
-            QPushButton#dark_theme_button {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #2c3e50, stop:1 #34495e);
-                border: 2px solid #3498db;
-                border-radius: 0px;
-                padding: 0px;
-                margin: 0px;
-                min-width: 18px;
-                max-width: 18px;
-                min-height: 18px;
-                max-height: 18px;
-                font-size: 0px;
-            }
-            
-            QPushButton#light_theme_button {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #ecf0f1, stop:1 #bdc3c7);
-                border: 2px solid #3498db;
-                border-radius: 0px;
-                padding: 0px;
-                margin: 0px;
-                min-width: 18px;
-                max-width: 18px;
-                min-height: 18px;
-                max-height: 18px;
-                font-size: 0px;
-            }
-        )");
-    } else { // light theme
-        setStyleSheet(R"(
-            QMainWindow {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #ecf0f1, stop:1 #bdc3c7);
-                border: 2px solid #3498db;
-            }
-            
-            QLabel {
-                color: #2c3e50;
-                font-weight: bold;
-            }
-            
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #3498db, stop:1 #2980b9);
-                border: 2px solid #2980b9;
-                color: white;
-                font-weight: bold;
-                padding: 6px 12px;
-                font-size: 11px;
-                min-width: 70px;
-            }
-            
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #5dade2, stop:1 #3498db);
-                border: 2px solid #5dade2;
-            }
-            
-            QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #2980b9, stop:1 #21618c);
-            }
-            
-            QPushButton:disabled {
-                background: #bdc3c7;
-                border: 2px solid #95a5a6;
-                color: #7f8c8d;
-            }
-            
-            QGroupBox {
-                font-weight: bold;
-                font-size: 12px;
-                color: #2c3e50;
-                border: 2px solid #bdc3c7;
-                margin-top: 8px;
-                padding-top: 8px;
-                background: rgba(255, 255, 255, 0.8);
-            }
-            
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 6px 0 6px;
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #ecf0f1, stop:1 #bdc3c7);
-            }
-            
-            QSpinBox {
-                border: 2px solid #bdc3c7;
-                padding: 3px;
-                background: white;
-                font-weight: bold;
-                color: #2c3e50;
-            }
-            
-            QSpinBox:focus {
-                border: 2px solid #3498db;
-            }
-            
-            QSpinBox::up-button, QSpinBox::down-button {
-                background: #ecf0f1;
-                border: 1px solid #bdc3c7;
-                width: 14px;
-            }
-            
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background: #d5dbdb;
-            }
-            
-            QComboBox {
-                border: 2px solid #bdc3c7;
-                padding: 3px;
-                background: white;
-                color: #2c3e50;
-            }
-            
-            QComboBox:focus {
-                border: 2px solid #3498db;
-            }
-            
-            QSlider::groove:horizontal {
-                border: 1px solid #bdc3c7;
-                height: 8px;
-                background: #ecf0f1;
-            }
-            
-            QSlider::handle:horizontal {
-                background: #3498db;
-                border: 1px solid #2980b9;
-                width: 18px;
-                margin: -2px 0;
-            }
-            
-            QCheckBox {
-                color: #2c3e50;
-                font-weight: bold;
-            }
-            
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border: 2px solid #bdc3c7;
-                background: white;
-            }
-            
-            QCheckBox::indicator:checked {
-                background: #3498db;
-                border: 2px solid #2980b9;
-            }
-            
-            QPushButton#toggle_settings {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #95a5a6, stop:1 #7f8c8d);
-                border: 1px solid #7f8c8d;
-                color: white;
-                font-size: 12px;
-                padding: 2px;
-                min-width: 25px;
-                max-width: 25px;
-                min-height: 25px;
-                max-height: 25px;
-            }
-            
-            QPushButton#toggle_settings:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #bdc3c7, stop:1 #95a5a6);
-            }
-            
-            QPushButton#close_button {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #ecf0f1, stop:1 #bdc3c7);
-                border: 1px solid #bdc3c7;
-                color: #7f8c8d;
-                font-size: 10px;
-                font-weight: bold;
-                padding: 1px;
-                min-width: 20px;
-                max-width: 20px;
-                min-height: 20px;
-                max-height: 20px;
-            }
-            
-            QPushButton#close_button:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #bdc3c7, stop:1 #95a5a6);
-                border: 1px solid #95a5a6;
-                color: #2c3e50;
-            }
-            
-            QPushButton#dark_theme_button {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #2c3e50, stop:1 #34495e);
-                border: 2px solid #3498db;
-                border-radius: 0px;
-                padding: 0px;
-                margin: 0px;
-                min-width: 18px;
-                max-width: 18px;
-                min-height: 18px;
-                max-height: 18px;
-                font-size: 0px;
-            }
-            
-            QPushButton#light_theme_button {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #ecf0f1, stop:1 #bdc3c7);
-                border: 2px solid #3498db;
-                border-radius: 0px;
-                padding: 0px;
-                margin: 0px;
-                min-width: 18px;
-                max-width: 18px;
-                min-height: 18px;
-                max-height: 18px;
-                font-size: 0px;
-            }
-        )");
+        styleFile = ":/styles/dark.qss";
+    } else {
+        styleFile = ":/styles/light.qss";
     }
-} 
+    
+    QFile file(styleFile);
+    if (file.open(QFile::ReadOnly | QFile::Text)) {
+        QString stylesheet = file.readAll();
+        setStyleSheet(stylesheet);
+        file.close();
+    } else {
+        qDebug() << "Failed to load stylesheet:" << styleFile;
+        // Fallback to basic styling
+        if (m_currentTheme == "dark") {
+            setStyleSheet("QMainWindow { background-color: #2b2b2b; color: #ffffff; }");
+        } else {
+            setStyleSheet("QMainWindow { background-color: #f5f5f5; color: #333333; }");
+        }
+    }
+}

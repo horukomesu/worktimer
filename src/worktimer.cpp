@@ -18,16 +18,49 @@
 WorkTimer::WorkTimer(QWidget *parent)
     : QMainWindow(parent)
 {
-    setWindowTitle("WorkTimer");
-    setGeometry(100, 100, 300, 280);
-    setMinimumSize(280, 250);
+    // Load UI from file
+    QUiLoader loader;
+    QFile uiFile(":/ui/worktimer.ui");
     
-    // Set window icon
-    setWindowIcon(QIcon(":/worktimer_icon.ico"));
+    if (!uiFile.open(QFile::ReadOnly)) {
+        qDebug() << "Failed to open UI file:" << uiFile.errorString();
+        return;
+    }
+    
+    QWidget *uiWidget = loader.load(&uiFile, this);
+    uiFile.close();
+    
+    if (!uiWidget) {
+        qDebug() << "Failed to load UI file:" << loader.errorString();
+        return;
+    }
+    
+    // Set the loaded UI as central widget
+    setCentralWidget(uiWidget);
+    
+    // Store reference to the loaded UI widget
+    m_uiWidget = uiWidget;
     
     // Make window a desktop widget
     m_baseFlags = Qt::FramelessWindowHint | Qt::Tool;
     setWindowFlags(m_baseFlags | Qt::WindowStaysOnTopHint);
+    
+    // Set initial size
+    resize(280, 200);
+    
+    // Initialize animations (will be set up after UI is loaded)
+    m_windowAnimation = new QPropertyAnimation(this, "geometry", this);
+    m_windowAnimation->setDuration(500); // 0.5 seconds
+    m_windowAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    
+    m_settingsAnimation = new QPropertyAnimation(this);
+    m_settingsAnimation->setDuration(500); // 0.5 seconds
+    m_settingsAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    
+    // Create animation group for simultaneous animations
+    m_animationGroup = new QParallelAnimationGroup(this);
+    m_animationGroup->addAnimation(m_windowAnimation);
+    m_animationGroup->addAnimation(m_settingsAnimation);
     
     // Initialize timer
     m_timer = new QTimer(this);
@@ -39,10 +72,10 @@ WorkTimer::WorkTimer(QWidget *parent)
     m_mediaPlayer->setAudioOutput(m_audioOutput);
     m_audioOutput->setVolume(m_soundVolume);
     
-    // Load settings and initialize UI
+    // Load settings and setup UI connections
     loadSettings();
     loadSounds();
-    initUI();
+    setupUI();
     applyStylesheet();
 }
 
@@ -167,157 +200,113 @@ void WorkTimer::updateDisplay()
     }
 }
 
-void WorkTimer::initUI()
+void WorkTimer::setupUI()
 {
-    QWidget *centralWidget = new QWidget();
-    setCentralWidget(centralWidget);
+    if (!m_uiWidget) {
+        return;
+    }
     
-    QVBoxLayout *layout = new QVBoxLayout(centralWidget);
-    layout->setContentsMargins(15, 15, 15, 15);
-    layout->setSpacing(8);
+    // Find UI elements by object names in the loaded UI widget
+    // The UI file now creates a QWidget, so we can find elements directly in it
+    m_timeLabel = m_uiWidget->findChild<QLabel*>("timeLabel");
+    m_sessionLabel = m_uiWidget->findChild<QLabel*>("sessionLabel");
+    m_startButton = m_uiWidget->findChild<QPushButton*>("startButton");
+    m_pauseButton = m_uiWidget->findChild<QPushButton*>("pauseButton");
+    m_resetButton = m_uiWidget->findChild<QPushButton*>("resetButton");
+    m_restartButton = m_uiWidget->findChild<QPushButton*>("restartButton");
+    m_toggleSettingsButton = m_uiWidget->findChild<QPushButton*>("toggle_settings");
+    m_closeButton = m_uiWidget->findChild<QPushButton*>("close_button");
+    m_themeButton = m_uiWidget->findChild<QPushButton*>("theme_button");
     
-    // Top buttons layout
-    QHBoxLayout *topLayout = new QHBoxLayout();
-    topLayout->addStretch();
+    m_settingsGroup = m_uiWidget->findChild<QGroupBox*>("settingsGroup");
+    m_workSpinbox = m_uiWidget->findChild<QSpinBox*>("workSpinbox");
+    m_shortBreakSpinbox = m_uiWidget->findChild<QSpinBox*>("shortBreakSpinbox");
+    m_longBreakSpinbox = m_uiWidget->findChild<QSpinBox*>("longBreakSpinbox");
+    m_sessionsSpinbox = m_uiWidget->findChild<QSpinBox*>("sessionsSpinbox");
+    m_opacitySlider = m_uiWidget->findChild<QSlider*>("opacitySlider");
+    m_pinCheckbox = m_uiWidget->findChild<QCheckBox*>("pinCheckbox");
+    m_soundCombo = m_uiWidget->findChild<QComboBox*>("soundCombo");
+    m_volumeSlider = m_uiWidget->findChild<QSlider*>("volumeSlider");
     
-    // Theme buttons
-    m_darkThemeButton = new QPushButton();
-    m_darkThemeButton->setObjectName("dark_theme_button");
-    m_darkThemeButton->setFixedSize(18, 18);
-    connect(m_darkThemeButton, &QPushButton::clicked, this, [this]() { updateTheme("dark"); });
-    topLayout->addWidget(m_darkThemeButton);
+    // Check if all UI elements were found
+    if (!m_timeLabel || !m_sessionLabel || !m_startButton || !m_pauseButton || 
+        !m_resetButton || !m_restartButton || !m_toggleSettingsButton || !m_closeButton || 
+        !m_themeButton || !m_settingsGroup ||
+        !m_workSpinbox || !m_shortBreakSpinbox || !m_longBreakSpinbox ||
+        !m_sessionsSpinbox || !m_opacitySlider || !m_pinCheckbox ||
+        !m_soundCombo || !m_volumeSlider) {
+        qDebug() << "Some UI elements not found!";
+        qDebug() << "timeLabel:" << (m_timeLabel ? "FOUND" : "NOT FOUND");
+        qDebug() << "startButton:" << (m_startButton ? "FOUND" : "NOT FOUND");
+        qDebug() << "restartButton:" << (m_restartButton ? "FOUND" : "NOT FOUND");
+        qDebug() << "themeButton:" << (m_themeButton ? "FOUND" : "NOT FOUND");
+        qDebug() << "settingsGroup:" << (m_settingsGroup ? "FOUND" : "NOT FOUND");
+        return;
+    }
     
-    m_lightThemeButton = new QPushButton();
-    m_lightThemeButton->setObjectName("light_theme_button");
-    m_lightThemeButton->setFixedSize(18, 18);
-    connect(m_lightThemeButton, &QPushButton::clicked, this, [this]() { updateTheme("light"); });
-    topLayout->addWidget(m_lightThemeButton);
+    qDebug() << "All UI elements found successfully!";
     
-    // Close button
-    m_closeButton = new QPushButton("✕");
-    m_closeButton->setObjectName("close_button");
-    m_closeButton->setMaximumWidth(20);
-    m_closeButton->setMaximumHeight(20);
-    connect(m_closeButton, &QPushButton::clicked, this, &WorkTimer::closeApplication);
-    topLayout->addWidget(m_closeButton);
+    // Set initial values
+    m_timeLabel->setText(formatTime(m_timeRemaining));
+    m_sessionLabel->setText(QString("Сессия %1 - Рабочее время").arg(m_currentSession));
     
-    layout->addLayout(topLayout);
-    
-    // Timer display
-    m_timeLabel = new QLabel(formatTime(m_timeRemaining));
-    m_timeLabel->setAlignment(Qt::AlignCenter);
-    QFont timeFont;
-    timeFont.setPointSize(28);
-    timeFont.setBold(true);
-    m_timeLabel->setFont(timeFont);
-    layout->addWidget(m_timeLabel);
-    
-    // Session info
-    m_sessionLabel = new QLabel(QString("Сессия %1 - Рабочее время").arg(m_currentSession));
-    m_sessionLabel->setAlignment(Qt::AlignCenter);
-    QFont sessionFont;
-    sessionFont.setPointSize(11);
-    m_sessionLabel->setFont(sessionFont);
-    layout->addWidget(m_sessionLabel);
-    
-    // Control buttons
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
-    
-    m_startButton = new QPushButton("Старт");
-    connect(m_startButton, &QPushButton::clicked, this, &WorkTimer::startTimer);
-    buttonLayout->addWidget(m_startButton);
-    
-    m_pauseButton = new QPushButton("Пауза");
-    connect(m_pauseButton, &QPushButton::clicked, this, &WorkTimer::pauseTimer);
-    m_pauseButton->setEnabled(false);
-    buttonLayout->addWidget(m_pauseButton);
-    
-    m_resetButton = new QPushButton("Сброс");
-    connect(m_resetButton, &QPushButton::clicked, this, &WorkTimer::resetTimer);
-    buttonLayout->addWidget(m_resetButton);
-    
-    layout->addLayout(buttonLayout);
-    
-    // Settings toggle button
-    m_toggleSettingsButton = new QPushButton("⚙");
-    m_toggleSettingsButton->setObjectName("toggle_settings");
-    m_toggleSettingsButton->setMaximumWidth(25);
-    m_toggleSettingsButton->setMaximumHeight(25);
-    connect(m_toggleSettingsButton, &QPushButton::clicked, this, &WorkTimer::toggleSettings);
-    layout->addWidget(m_toggleSettingsButton);
-    
-    // Settings group
-    m_settingsGroup = new QGroupBox("Настройки");
-    QGridLayout *settingsLayout = new QGridLayout(m_settingsGroup);
-    
-    // Work duration
-    settingsLayout->addWidget(new QLabel("Рабочее время (мин):"), 0, 0);
-    m_workSpinbox = new QSpinBox();
-    m_workSpinbox->setRange(1, 60);
+    // Set spinbox values
     m_workSpinbox->setValue(m_workDuration);
-    connect(m_workSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateWorkDuration);
-    settingsLayout->addWidget(m_workSpinbox, 0, 1);
-    
-    // Short break duration
-    settingsLayout->addWidget(new QLabel("Короткий перерыв (мин):"), 1, 0);
-    m_shortBreakSpinbox = new QSpinBox();
-    m_shortBreakSpinbox->setRange(1, 30);
     m_shortBreakSpinbox->setValue(m_shortBreakDuration);
-    connect(m_shortBreakSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateShortBreakDuration);
-    settingsLayout->addWidget(m_shortBreakSpinbox, 1, 1);
-    
-    // Long break duration
-    settingsLayout->addWidget(new QLabel("Длинный перерыв (мин):"), 2, 0);
-    m_longBreakSpinbox = new QSpinBox();
-    m_longBreakSpinbox->setRange(1, 60);
     m_longBreakSpinbox->setValue(m_longBreakDuration);
-    connect(m_longBreakSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateLongBreakDuration);
-    settingsLayout->addWidget(m_longBreakSpinbox, 2, 1);
-    
-    // Sessions until long break
-    settingsLayout->addWidget(new QLabel("Сессий до длинного перерыва:"), 3, 0);
-    m_sessionsSpinbox = new QSpinBox();
-    m_sessionsSpinbox->setRange(2, 10);
     m_sessionsSpinbox->setValue(m_sessionsUntilLongBreak);
-    connect(m_sessionsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateSessionsUntilLongBreak);
-    settingsLayout->addWidget(m_sessionsSpinbox, 3, 1);
     
-    // Opacity slider
-    settingsLayout->addWidget(new QLabel("Прозрачность:"), 4, 0);
-    m_opacitySlider = new QSlider(Qt::Horizontal);
-    m_opacitySlider->setRange(20, 100);
+    // Set slider values
     m_opacitySlider->setValue(int(m_opacity * 100));
-    connect(m_opacitySlider, &QSlider::valueChanged, this, &WorkTimer::updateOpacity);
-    settingsLayout->addWidget(m_opacitySlider, 4, 1);
+    m_volumeSlider->setValue(int(m_soundVolume * 100));
     
-    // Pin on top checkbox
-    m_pinCheckbox = new QCheckBox("Поверх всех окон");
+    // Set checkbox state
     m_pinCheckbox->setChecked(m_pinOnTop);
-    connect(m_pinCheckbox, &QCheckBox::stateChanged, this, &WorkTimer::updatePinOnTop);
-    settingsLayout->addWidget(m_pinCheckbox, 5, 0, 1, 2);
     
-    // Sound selection
-    settingsLayout->addWidget(new QLabel("Звук уведомления:"), 6, 0, 1, 2);
-    m_soundCombo = new QComboBox();
+    // Set combo box items
     m_soundCombo->addItems(m_availableSounds);
     if (m_availableSounds.contains(m_selectedSound)) {
         m_soundCombo->setCurrentText(m_selectedSound);
     }
-    connect(m_soundCombo, &QComboBox::currentTextChanged, this, &WorkTimer::updateSound);
-    settingsLayout->addWidget(m_soundCombo, 7, 0, 1, 2);
     
-    // Volume slider
-    settingsLayout->addWidget(new QLabel("Громкость звука:"), 8, 0);
-    m_volumeSlider = new QSlider(Qt::Horizontal);
-    m_volumeSlider->setRange(0, 100);
-    m_volumeSlider->setValue(int(m_soundVolume * 100));
+    // Set initial icons
+    m_toggleSettingsButton->setIcon(QIcon(":/new/buttons/ui/settings.svg"));
+    m_toggleSettingsButton->setChecked(false);
+    if (m_currentTheme == "dark") {
+        m_themeButton->setIcon(QIcon(":/new/buttons/ui/dark.svg"));
+    } else {
+        m_themeButton->setIcon(QIcon(":/new/buttons/ui/light.svg"));
+    }
+    
+    // Connect signals
+    connect(m_startButton, &QPushButton::clicked, this, &WorkTimer::startTimer);
+    connect(m_pauseButton, &QPushButton::clicked, this, &WorkTimer::pauseTimer);
+    connect(m_resetButton, &QPushButton::clicked, this, &WorkTimer::resetTimer);
+    connect(m_restartButton, &QPushButton::clicked, this, &WorkTimer::restartTimer);
+    connect(m_toggleSettingsButton, &QPushButton::toggled, this, &WorkTimer::toggleSettings);
+    connect(m_closeButton, &QPushButton::clicked, this, &WorkTimer::closeApplication);
+    
+    connect(m_themeButton, &QPushButton::clicked, this, [this]() { 
+        updateTheme(m_currentTheme == "dark" ? "light" : "dark"); 
+    });
+    
+    connect(m_workSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateWorkDuration);
+    connect(m_shortBreakSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateShortBreakDuration);
+    connect(m_longBreakSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateLongBreakDuration);
+    connect(m_sessionsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateSessionsUntilLongBreak);
+    
+    connect(m_opacitySlider, &QSlider::valueChanged, this, &WorkTimer::updateOpacity);
+    connect(m_pinCheckbox, &QCheckBox::stateChanged, this, &WorkTimer::updatePinOnTop);
+    connect(m_soundCombo, &QComboBox::currentTextChanged, this, &WorkTimer::updateSound);
     connect(m_volumeSlider, &QSlider::valueChanged, this, &WorkTimer::updateVolume);
     connect(m_volumeSlider, &QSlider::sliderReleased, this, &WorkTimer::playVolumePreview);
-    settingsLayout->addWidget(m_volumeSlider, 8, 1);
     
-    layout->addWidget(m_settingsGroup);
-    
-    // Hide settings by default
+    // Hide settings by default and set initial position
     m_settingsVisible = false;
     m_settingsGroup->hide();
+    m_settingsGroup->setGeometry(QRect(m_baseWindowWidth, 0, m_settingsWidth, height()));
+    
+    // Setup animation targets after UI is loaded
+    m_settingsAnimation->setTargetObject(m_settingsGroup);
+    m_settingsAnimation->setPropertyName("geometry");
 } 

@@ -19,6 +19,17 @@
 3. Следуйте инструкциям
 
 ### Собрать из исходников
+
+#### Через Qt Creator (рекомендуется)
+1. Откройте Qt Creator 11
+2. Выберите **File → Open File or Project**
+3. Найдите файл `CMakeLists.txt` в корне проекта
+4. Настройте Kit с Qt 6.9.1 и MSVC 2022
+5. Нажмите **Ctrl+B** для сборки
+
+Подробные инструкции см. в [QT_CREATOR_SETUP.md](QT_CREATOR_SETUP.md)
+
+#### Через командную строку
 ```bash
 # Требования: Visual Studio 2022, Qt6, CMake
 .\build_cpp.bat
@@ -46,8 +57,13 @@
 WorkTimer/
 ├── src/                   # Исходный код
 ├── include/               # Заголовочные файлы
+├── ui/                    # UI файлы (Qt Designer)
+├── styles/                # QSS стили (темы)
 ├── resources/             # Иконки
 ├── sounds/                # Звуки
+├── CMakeLists.txt         # CMake конфигурация
+├── CMakePresets.json      # Настройки сборки
+├── WorkTimer.pro          # Qt Creator проект
 ├── build_cpp.bat         # Сборка
 └── build_installer.bat   # Создание установщика
 ```
