@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>342</width>
+    <width>338</width>
     <height>200</height>
    </rect>
   </property>
@@ -78,6 +78,29 @@
          <property name="icon">
           <iconset resource="../resources.qrc">
            <normaloff>:/new/buttons/ui/light.svg</normaloff>:/new/buttons/ui/light.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="minimize_button">
+         <property name="minimumSize">
+          <size>
+           <width>30</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/new/buttons/ui/minimize.svg</normaloff>:/new/buttons/ui/minimize.svg</iconset>
          </property>
         </widget>
        </item>
@@ -298,15 +321,16 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QSpinBox" name="workSpinbox">
-        <property name="minimum">
-         <number>1</number>
+       <widget class="QTimeEdit" name="workTimeEdit">
+        <property name="displayFormat">
+         <string>m:ss</string>
         </property>
-        <property name="maximum">
-         <number>60</number>
-        </property>
-        <property name="value">
-         <number>25</number>
+        <property name="time">
+         <time>
+          <hour>0</hour>
+          <minute>25</minute>
+          <second>0</second>
+         </time>
         </property>
        </widget>
       </item>
@@ -318,15 +342,16 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QSpinBox" name="shortBreakSpinbox">
-        <property name="minimum">
-         <number>1</number>
+       <widget class="QTimeEdit" name="shortBreakTimeEdit">
+        <property name="displayFormat">
+         <string>m:ss</string>
         </property>
-        <property name="maximum">
-         <number>30</number>
-        </property>
-        <property name="value">
-         <number>5</number>
+        <property name="time">
+         <time>
+          <hour>0</hour>
+          <minute>5</minute>
+          <second>0</second>
+         </time>
         </property>
        </widget>
       </item>
@@ -338,15 +363,16 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QSpinBox" name="longBreakSpinbox">
-        <property name="minimum">
-         <number>1</number>
+       <widget class="QTimeEdit" name="longBreakTimeEdit">
+        <property name="displayFormat">
+         <string>m:ss</string>
         </property>
-        <property name="maximum">
-         <number>60</number>
-        </property>
-        <property name="value">
-         <number>15</number>
+        <property name="time">
+         <time>
+          <hour>0</hour>
+          <minute>15</minute>
+          <second>0</second>
+         </time>
         </property>
        </widget>
       </item>
@@ -370,21 +396,27 @@
         </property>
        </widget>
       </item>
-
       <item row="4" column="0">
-       <widget class="QLabel" name="soundLabel">
+       <widget class="QLabel" name="breakSoundLabel">
         <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap resource="../resources.qrc">:/new/buttons/ui/music.svg</pixmap>
+         <string>Звук перерыва</string>
         </property>
        </widget>
       </item>
       <item row="4" column="1">
-       <widget class="QComboBox" name="soundCombo"/>
+       <widget class="QComboBox" name="breakSoundCombo"/>
       </item>
       <item row="5" column="0">
+       <widget class="QLabel" name="workSoundLabel">
+        <property name="text">
+         <string>Звук работы</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QComboBox" name="workSoundCombo"/>
+      </item>
+      <item row="6" column="0">
        <widget class="QLabel" name="volumeLabel">
         <property name="text">
          <string/>
@@ -394,7 +426,7 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
+      <item row="6" column="1">
        <widget class="QSlider" name="volumeSlider">
         <property name="maximum">
          <number>100</number>

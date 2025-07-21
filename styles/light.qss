@@ -157,6 +157,21 @@ QPushButton#theme_button:hover {
     border-color: #aaaaaa;
 }
 
+QPushButton#minimize_button {
+    background-color: #d0d0d0;
+    border: 1px solid #bbbbbb;
+    border-radius: 15px;
+    min-height: 30px;
+    min-width: 30px;
+    max-height: 30px;
+    max-width: 30px;
+}
+
+QPushButton#minimize_button:hover {
+    background-color: #c0c0c0;
+    border-color: #aaaaaa;
+}
+
 QPushButton#close_button {
     background-color: #d13438;
     border: 1px solid #b02a2e;
@@ -231,6 +246,41 @@ QSpinBox::up-button, QSpinBox::down-button {
 
 QSpinBox::up-button:hover, QSpinBox::down-button:hover {
     background-color: #d0d0d0;
+}
+
+/* Time Edit */
+QTimeEdit {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    padding: 2px 4px;
+    color: #333333;
+    min-height: 16px;
+}
+
+QTimeEdit:focus {
+    border-color: #0078d4;
+    background-color: #f8f8f8;
+}
+
+QTimeEdit::up-button, QTimeEdit::down-button {
+    width: 16px;
+    background-color: #e0e0e0;
+    border: 1px solid #cccccc;
+}
+
+QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
+    background-color: #d0d0d0;
+}
+
+QTimeEdit::section {
+    background-color: transparent;
+    color: #333333;
+}
+
+QTimeEdit::section:selected {
+    background-color: #0078d4;
+    color: #ffffff;
 }
 
 /* Sliders */

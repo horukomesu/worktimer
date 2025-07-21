@@ -7,6 +7,8 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QSpinBox>
+#include <QTimeEdit>
+#include <QTime>
 #include <QGroupBox>
 #include <QSlider>
 #include <QCheckBox>
@@ -26,6 +28,9 @@
 #include <QWidget>
 #include <QPropertyAnimation>
 #include <QParallelAnimationGroup>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
 
 class WorkTimer : public QMainWindow
 {
@@ -39,6 +44,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void startTimer();
@@ -49,15 +55,18 @@ private slots:
     void timerFinished();
     void toggleSettings(bool checked = false);
     void closeApplication();
+    void minimizeToTray();
+    void restoreFromTray();
     
-    void updateWorkDuration(int value);
-    void updateShortBreakDuration(int value);
-    void updateLongBreakDuration(int value);
+    void updateWorkDuration(const QTime &time);
+    void updateShortBreakDuration(const QTime &time);
+    void updateLongBreakDuration(const QTime &time);
     void updateSessionsUntilLongBreak(int value);
     void updateTheme(const QString &theme);
     void updatePinOnTop(int state);
     void updateAllIcons();
-    void updateSound(const QString &soundName);
+    void updateBreakSound(const QString &soundName);
+    void updateWorkSound(const QString &soundName);
     void updateVolume(int value);
     void playVolumePreview();
 
@@ -67,19 +76,20 @@ private:
     void loadSettings();
     void saveSettings();
     void loadSounds();
-    void playNotificationSound();
+    void playNotificationSound(bool isBreakNotification = true);
     QString formatTime(int seconds);
     void updateDisplay();
+    void setupTrayIcon();
 
     // Window properties
     bool m_dragging = false;
     QPoint m_dragPosition;
     Qt::WindowFlags m_baseFlags;
     
-    // Timer settings
-    int m_workDuration = 25;
-    int m_shortBreakDuration = 5;
-    int m_longBreakDuration = 15;
+    // Timer settings (in seconds)
+    int m_workDuration = 25 * 60;
+    int m_shortBreakDuration = 5 * 60;
+    int m_longBreakDuration = 15 * 60;
     int m_sessionsUntilLongBreak = 4;
     
     // Appearance settings
@@ -89,7 +99,8 @@ private:
     // Sound settings
     QString m_soundsFolder = "sounds";
     QStringList m_availableSounds;
-    QString m_selectedSound = "Happy bells notification.mp3";
+    QString m_breakSound = "Happy bells notification.mp3";
+    QString m_workSound = "Happy bells notification.mp3";
     double m_soundVolume = 0.5;
     
     // Settings file
@@ -118,16 +129,18 @@ private:
     QPushButton *m_resetButton;
     QPushButton *m_restartButton;
     QPushButton *m_toggleSettingsButton;
+    QPushButton *m_minimizeButton;
     QPushButton *m_closeButton;
     QPushButton *m_themeButton;
     
     QGroupBox *m_settingsGroup;
-    QSpinBox *m_workSpinbox;
-    QSpinBox *m_shortBreakSpinbox;
-    QSpinBox *m_longBreakSpinbox;
+    QTimeEdit *m_workTimeEdit;
+    QTimeEdit *m_shortBreakTimeEdit;
+    QTimeEdit *m_longBreakTimeEdit;
     QSpinBox *m_sessionsSpinbox;
     QCheckBox *m_pinCheckbox;
-    QComboBox *m_soundCombo;
+    QComboBox *m_breakSoundCombo;
+    QComboBox *m_workSoundCombo;
     QSlider *m_volumeSlider;
     
     // Animation
@@ -137,4 +150,10 @@ private:
     bool m_isAnimating = false;
     int m_settingsWidth = 280;
     int m_baseWindowWidth = 342;
+    
+    // System tray
+    QSystemTrayIcon *m_trayIcon;
+    QMenu *m_trayMenu;
+    QAction *m_restoreAction;
+    QAction *m_quitAction;
 }; 

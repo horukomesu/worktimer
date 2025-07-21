@@ -26,5 +26,7 @@
         <file>ui/music_white.svg</file>
         <file>ui/volume_white.svg</file>
         <file>ui/settingsON_white.svg</file>
+        <file>ui/minimize.svg</file>
+        <file>ui/minimize_white.svg</file>
     </qresource>
 </RCC>

@@ -24,7 +24,7 @@ void WorkTimer::resetTimer()
     pauseTimer();
     m_currentSession = 1;
     m_isWorkSession = true;
-    m_timeRemaining = m_workDuration * 60;
+    m_timeRemaining = m_workDuration;
     updateDisplay();
 }
 
@@ -33,7 +33,7 @@ void WorkTimer::restartTimer()
     // Reset to first session and start immediately
     m_currentSession = 1;
     m_isWorkSession = true;
-    m_timeRemaining = m_workDuration * 60;
+    m_timeRemaining = m_workDuration;
     updateDisplay();
     startTimer();
 }
@@ -51,24 +51,27 @@ void WorkTimer::updateTimer()
 void WorkTimer::timerFinished()
 {
     pauseTimer();
-    playNotificationSound();
     
     if (m_isWorkSession) {
-        // Work session finished, start break
+        // Work session finished, start break - play break sound
+        playNotificationSound(true);
+        
         if (m_currentSession % m_sessionsUntilLongBreak == 0) {
             // Long break
-            m_timeRemaining = m_longBreakDuration * 60;
+            m_timeRemaining = m_longBreakDuration;
             m_sessionLabel->setText(QString("Сессия %1 - Длинный перерыв").arg(m_currentSession));
         } else {
             // Short break
-            m_timeRemaining = m_shortBreakDuration * 60;
+            m_timeRemaining = m_shortBreakDuration;
             m_sessionLabel->setText(QString("Сессия %1 - Короткий перерыв").arg(m_currentSession));
         }
         m_isWorkSession = false;
     } else {
-        // Break finished, start next work session
+        // Break finished, start next work session - play work sound
+        playNotificationSound(false);
+        
         m_currentSession++;
-        m_timeRemaining = m_workDuration * 60;
+        m_timeRemaining = m_workDuration;
         m_sessionLabel->setText(QString("Сессия %1 - Рабочее время").arg(m_currentSession));
         m_isWorkSession = true;
     }
@@ -169,26 +172,72 @@ void WorkTimer::closeApplication()
     QApplication::quit();
 }
 
-// Settings update methods
-void WorkTimer::updateWorkDuration(int value)
+void WorkTimer::setupTrayIcon()
 {
-    m_workDuration = value;
+    // Create tray icon
+    m_trayIcon = new QSystemTrayIcon(this);
+    m_trayIcon->setIcon(QIcon(":/resources/worktimer_icon.ico"));
+    m_trayIcon->setToolTip("Work Timer");
+    
+    // Create tray menu
+    m_trayMenu = new QMenu(this);
+    m_restoreAction = new QAction("Показать", this);
+    m_quitAction = new QAction("Выход", this);
+    
+    m_trayMenu->addAction(m_restoreAction);
+    m_trayMenu->addSeparator();
+    m_trayMenu->addAction(m_quitAction);
+    
+    m_trayIcon->setContextMenu(m_trayMenu);
+    
+    // Connect signals
+    connect(m_restoreAction, &QAction::triggered, this, &WorkTimer::restoreFromTray);
+    connect(m_quitAction, &QAction::triggered, this, &WorkTimer::closeApplication);
+    connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
+        if (reason == QSystemTrayIcon::DoubleClick) {
+            restoreFromTray();
+        }
+    });
+    
+    // Show tray icon
+    m_trayIcon->show();
+}
+
+void WorkTimer::minimizeToTray()
+{
+    hide();
+    if (m_trayIcon) {
+        m_trayIcon->showMessage("Work Timer", "Приложение свернуто в трей", QSystemTrayIcon::Information, 2000);
+    }
+}
+
+void WorkTimer::restoreFromTray()
+{
+    show();
+    raise();
+    activateWindow();
+}
+
+// Settings update methods
+void WorkTimer::updateWorkDuration(const QTime &time)
+{
+    m_workDuration = time.minute() * 60 + time.second();
     if (m_isWorkSession && !m_isRunning) {
-        m_timeRemaining = m_workDuration * 60;
+        m_timeRemaining = m_workDuration;
         updateDisplay();
     }
     saveSettings();
 }
 
-void WorkTimer::updateShortBreakDuration(int value)
+void WorkTimer::updateShortBreakDuration(const QTime &time)
 {
-    m_shortBreakDuration = value;
+    m_shortBreakDuration = time.minute() * 60 + time.second();
     saveSettings();
 }
 
-void WorkTimer::updateLongBreakDuration(int value)
+void WorkTimer::updateLongBreakDuration(const QTime &time)
 {
-    m_longBreakDuration = value;
+    m_longBreakDuration = time.minute() * 60 + time.second();
     saveSettings();
 }
 
@@ -258,12 +307,12 @@ void WorkTimer::updateAllIcons()
         if (m_closeButton) {
             m_closeButton->setIcon(QIcon(":/new/buttons/ui/exit_white.svg"));
         }
+        if (m_minimizeButton) {
+            m_minimizeButton->setIcon(QIcon(":/new/buttons/ui/minimize_white.svg"));
+        }
         
         // Update label pixmaps for dark theme
-        QLabel* soundLabel = m_uiWidget->findChild<QLabel*>("soundLabel");
-        if (soundLabel) {
-            soundLabel->setPixmap(QPixmap(":/new/buttons/ui/music_white.svg"));
-        }
+        // Note: sound labels are now text labels, not icon labels
         
         QLabel* volumeLabel = m_uiWidget->findChild<QLabel*>("volumeLabel");
         if (volumeLabel) {
@@ -293,12 +342,12 @@ void WorkTimer::updateAllIcons()
         if (m_closeButton) {
             m_closeButton->setIcon(QIcon(":/new/buttons/ui/exit.svg"));
         }
+        if (m_minimizeButton) {
+            m_minimizeButton->setIcon(QIcon(":/new/buttons/ui/minimize.svg"));
+        }
         
         // Update label pixmaps for light theme
-        QLabel* soundLabel = m_uiWidget->findChild<QLabel*>("soundLabel");
-        if (soundLabel) {
-            soundLabel->setPixmap(QPixmap(":/new/buttons/ui/music.svg"));
-        }
+        // Note: sound labels are now text labels, not icon labels
         
         QLabel* volumeLabel = m_uiWidget->findChild<QLabel*>("volumeLabel");
         if (volumeLabel) {
@@ -307,9 +356,15 @@ void WorkTimer::updateAllIcons()
     }
 }
 
-void WorkTimer::updateSound(const QString &soundName)
+void WorkTimer::updateBreakSound(const QString &soundName)
 {
-    m_selectedSound = soundName;
+    m_breakSound = soundName;
+    saveSettings();
+}
+
+void WorkTimer::updateWorkSound(const QString &soundName)
+{
+    m_workSound = soundName;
     saveSettings();
 }
 
@@ -323,7 +378,8 @@ void WorkTimer::updateVolume(int value)
 void WorkTimer::playVolumePreview()
 {
     // Play preview sound only when slider is released
-    playNotificationSound();
+    // Use break sound for preview
+    playNotificationSound(true);
 }
 
 void WorkTimer::applyStylesheet()
