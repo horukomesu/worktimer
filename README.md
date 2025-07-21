@@ -2,14 +2,18 @@
 
 A modern Pomodoro timer application built with Qt6 and C++. Features a clean, customizable interface with dark/light themes and customizable notification sounds.
 
+<img width="623" height="201" alt="image" src="https://github.com/user-attachments/assets/ab39f72c-0dea-4cb7-ba0c-a822df9cf7d0" />
+
+<img width="619" height="201" alt="image" src="https://github.com/user-attachments/assets/e77a6d2d-a6fa-4f28-9f00-c690fd0ba50a" />
+
 ## Features
 
-- ⏱️ **Pomodoro Technique**: Work sessions, short breaks, and long breaks
-- 🎵 **Custom Sounds**: Separate sounds for break and work notifications
-- 🎨 **Themes**: Dark and light themes with modern UI
-- ⚙️ **Flexible Settings**: Customizable session durations (min:sec format)
-- 🖥️ **System Tray**: Minimize to system tray with notifications
-- 📌 **Always on Top**: Option to keep window above other applications
+-  **Pomodoro Technique**: Work sessions, short breaks, and long breaks
+-  **Custom Sounds**: Separate sounds for break and work notifications
+-  **Themes**: Dark and light themes with modern UI
+-  **Flexible Settings**: Customizable session durations (min:sec format)
+-  **System Tray**: Minimize to system tray with notifications
+-  **Always on Top**: Option to keep window above other applications
 
 ## Technical Details
 
@@ -61,24 +65,9 @@ worktimer/
 - **Sounds**: Add custom MP3 files to `sounds/` folder
 - **Settings**: All preferences saved automatically
 
-## Installation
-
-### Windows
-1. Download `WorkTimerSetup.exe` from Releases
-2. Run the installer
-3. Follow installation wizard
 
 ### Build from Source
-```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
-```
+Open project in qt creator and build
+May need some adjustments in cmakelists.txt
 
-## Requirements
-- Windows 10/11
-- Qt6 runtime libraries (included in installer)
-- 50MB disk space
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details. 
