@@ -1,88 +1,84 @@
 # WorkTimer
-<img width="316" height="260" alt="image" src="https://github.com/user-attachments/assets/58ee1426-fb32-4d2f-9221-75d2e9ef031b" />
-<img width="307" height="521" alt="image" src="https://github.com/user-attachments/assets/ecd50239-629d-4b1b-a61e-010ebc4f8997" />
 
-Таймер Помодоро для Windows с современным интерфейсом.
+A modern Pomodoro timer application built with Qt6 and C++. Features a clean, customizable interface with dark/light themes and customizable notification sounds.
 
-## 🚀 Возможности
+## Features
 
-- ⏱️ Таймер Помодоро (работа/перерывы)
-- 🎨 Темная и светлая темы
-- 🔊 Звуковые уведомления
-- 🖥️ Виджет рабочего стола
-- 📱 Сворачивание в системный трей
-- ⚙️ Настройки сохраняются
-- 🖼️ Кастомная иконка
+- ⏱️ **Pomodoro Technique**: Work sessions, short breaks, and long breaks
+- 🎵 **Custom Sounds**: Separate sounds for break and work notifications
+- 🎨 **Themes**: Dark and light themes with modern UI
+- ⚙️ **Flexible Settings**: Customizable session durations (min:sec format)
+- 🖥️ **System Tray**: Minimize to system tray with notifications
+- 📌 **Always on Top**: Option to keep window above other applications
 
-## 📦 Установка
+## Technical Details
 
-### Скачать готовую версию
-1. Скачайте `WorkTimerSetup.exe` из раздела Releases
-2. Запустите установщик
-3. Следуйте инструкциям
+### Built With
+- **Qt6**: Modern C++ framework for cross-platform GUI
+- **C++17**: Modern C++ features
+- **CMake**: Build system
+- **QMediaPlayer**: Audio playback for notifications
+- **QSystemTrayIcon**: System tray integration
 
-### Собрать из исходников
+### Architecture
+- **Header-only design**: Clean separation of concerns
+- **Resource management**: Qt resource system for assets
+- **Settings persistence**: JSON-based configuration
+- **Event-driven**: Qt signal/slot mechanism
 
-#### Через Qt Creator (рекомендуется)
-1. Откройте Qt Creator 11
-2. Выберите **File → Open File or Project**
-3. Найдите файл `CMakeLists.txt` в корне проекта
-4. Настройте Kit с Qt 6.9.1 и MSVC 2022
-5. Нажмите **Ctrl+B** для сборки
+### File Structure
+```
+worktimer/
+├── src/           # Source files
+├── include/       # Header files
+├── ui/           # Qt Designer UI files
+├── styles/       # QSS stylesheets
+├── sounds/       # Notification audio files
+├── resources/    # Icons and assets
+└── installer/    # Installation files
+```
 
-Подробные инструкции см. в [QT_CREATOR_SETUP.md](QT_CREATOR_SETUP.md)
+## Usage
 
-#### Через командную строку
+### Basic Operation
+1. **Start Timer**: Click the play button to begin a work session
+2. **Pause/Resume**: Use pause button to temporarily stop the timer
+3. **Reset**: Reset to the beginning of current session
+4. **Restart**: Reset and immediately start a new session
+
+### Settings Panel
+- **Work Duration**: Set work session length (e.g., 25:00, 30:30)
+- **Short Break**: Set short break duration (e.g., 5:00, 3:30)
+- **Long Break**: Set long break duration (e.g., 15:00, 20:00)
+- **Sessions**: Number of work sessions before long break
+- **Break Sound**: Sound for break notifications
+- **Work Sound**: Sound for work session notifications
+- **Volume**: Adjust notification volume
+- **Always on Top**: Keep window above other applications
+
+### Customization
+- **Themes**: Toggle between dark and light themes
+- **Sounds**: Add custom MP3 files to `sounds/` folder
+- **Settings**: All preferences saved automatically
+
+## Installation
+
+### Windows
+1. Download `WorkTimerSetup.exe` from Releases
+2. Run the installer
+3. Follow installation wizard
+
+### Build from Source
 ```bash
-# Требования: Visual Studio 2022, Qt6, CMake
-.\build_cpp.bat
+mkdir build && cd build
+cmake ..
+cmake --build .
 ```
 
-## 🎮 Использование
+## Requirements
+- Windows 10/11
+- Qt6 runtime libraries (included in installer)
+- 50MB disk space
 
-1. **Запуск**: `build\bin\Release\WorkTimer.exe`
-2. **Управление**: 
-   - Перетаскивание окна мышью
-   - Кнопки "Старт", "Пауза", "Сброс"
-   - Сворачивание в трей через кнопку "−"
-   - Настройки через кнопку "⚙"
-   - Двойной клик по иконке в трее для восстановления
-
-## ⚙️ Настройки
-
-- Время работы и перерывов
-- Выбор темы
-- Прозрачность окна
-- Звуковые уведомления
-- "Поверх всех окон"
-
-## 📁 Структура
-
-```
-WorkTimer/
-├── src/                   # Исходный код
-├── include/               # Заголовочные файлы
-├── ui/                    # UI файлы (Qt Designer)
-├── styles/                # QSS стили (темы)
-├── resources/             # Иконки
-├── sounds/                # Звуки
-├── CMakeLists.txt         # CMake конфигурация
-├── CMakePresets.json      # Настройки сборки
-├── WorkTimer.pro          # Qt Creator проект
-├── build_cpp.bat         # Сборка
-└── build_installer.bat   # Создание установщика
-```
-
-## 🔧 Разработка
-
-```bash
-# Сборка
-.\build_cpp.bat
-
-# Создание установщика
-.\build_installer.bat
-```
-
-## 📝 Лицензия
-
-Открытый исходный код. 
+## License
+This project is licensed under the MIT License - see the LICENSE file for details. 
