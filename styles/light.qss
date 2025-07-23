@@ -386,3 +386,35 @@ QWidget#settingsPanel {
     border: 1px solid #cccccc;
     border-radius: 4px;
 }
+
+/* Language Toggle Switch */
+QPushButton#languageSwitch {
+    background-color: #cccccc;
+    border: 1px solid #bbbbbb;
+    border-radius: 10px;
+    min-height: 20px;
+    min-width: 40px;
+    max-height: 20px;
+    max-width: 40px;
+    padding: 0px;
+    color: #333333;
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+QPushButton#languageSwitch:checked {
+    background-color: #0078d4;
+    border-color: #106ebe;
+    color: #ffffff;
+}
+
+QPushButton#languageSwitch:hover {
+    background-color: #bbbbbb;
+    border-color: #aaaaaa;
+}
+
+QPushButton#languageSwitch:checked:hover {
+    background-color: #106ebe;
+    border-color: #005a9e;
+}

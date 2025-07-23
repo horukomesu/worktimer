@@ -14,17 +14,24 @@
 #include <QDir>
 #include <QStringList>
 #include <QMessageBox>
-#include <QDebug>
+
 
 WorkTimer::WorkTimer(QWidget *parent)
     : QMainWindow(parent)
 {
+    // Load settings first, before creating UI
+    loadSettings();
+    loadSounds();
+    
+    // Initialize translator
+    m_translator = new QTranslator(this);
+    loadTranslation();
+    
     // Load UI from file
     QUiLoader loader;
     QFile uiFile(":/ui/worktimer.ui");
     
     if (!uiFile.open(QFile::ReadOnly)) {
-        qDebug() << "Failed to open UI file:" << uiFile.errorString();
         return;
     }
     
@@ -32,7 +39,6 @@ WorkTimer::WorkTimer(QWidget *parent)
     uiFile.close();
     
     if (!uiWidget) {
-        qDebug() << "Failed to load UI file:" << loader.errorString();
         return;
     }
     
@@ -42,9 +48,16 @@ WorkTimer::WorkTimer(QWidget *parent)
     // Store reference to the loaded UI widget
     m_uiWidget = uiWidget;
     
-    // Make window a desktop widget
-    m_baseFlags = Qt::FramelessWindowHint | Qt::Tool;
-    setWindowFlags(m_baseFlags | Qt::WindowStaysOnTopHint);
+    // Make window a desktop widget and apply loaded settings
+    m_baseFlags = Qt::FramelessWindowHint;
+    Qt::WindowFlags flags = m_baseFlags;
+    if (m_pinOnTop) {
+        flags |= Qt::WindowStaysOnTopHint;
+    }
+    if (!m_showInTaskbar) {
+        flags |= Qt::Tool;
+    }
+    setWindowFlags(flags);
     
     // Set initial size
     resize(280, 200);
@@ -73,13 +86,14 @@ WorkTimer::WorkTimer(QWidget *parent)
     m_mediaPlayer->setAudioOutput(m_audioOutput);
     m_audioOutput->setVolume(m_soundVolume);
     
-    // Load settings and setup UI connections
-    loadSettings();
-    loadSounds();
+    // Setup UI connections
     setupUI();
     setupTrayIcon();
     applyStylesheet();
     updateAllIcons();
+    
+    // Apply translations after all UI is initialized
+    retranslateUi();
 }
 
 WorkTimer::~WorkTimer()
@@ -113,9 +127,16 @@ void WorkTimer::mouseReleaseEvent(QMouseEvent *event)
 
 void WorkTimer::closeEvent(QCloseEvent *event)
 {
-    // Instead of closing, minimize to tray
-    minimizeToTray();
-    event->ignore(); // Prevent the window from closing
+    if (m_showInTaskbar) {
+        // If showing in taskbar, close normally
+        saveSettings();
+        m_timer->stop();
+        QApplication::quit();
+    } else {
+        // If not showing in taskbar, minimize to tray without notification
+        minimizeToTray(false);
+        event->ignore(); // Prevent the window from closing
+    }
 }
 
 void WorkTimer::loadSettings()
@@ -144,6 +165,8 @@ void WorkTimer::loadSettings()
         // Load appearance settings
         m_currentTheme = settings.value("current_theme").toString("dark");
         m_pinOnTop = settings.value("pin_on_top").toBool(true);
+        m_showInTaskbar = settings.value("show_in_taskbar").toBool(true);
+        m_currentLanguage = settings.value("current_language").toString("ru");
         
         // Load sound settings
         m_breakSound = settings.value("break_sound").toString("Happy bells notification.mp3");
@@ -151,11 +174,12 @@ void WorkTimer::loadSettings()
         m_soundVolume = settings.value("sound_volume").toDouble(0.5);
         
         // Apply settings
-        m_audioOutput->setVolume(m_soundVolume);
-        if (m_pinOnTop) {
-            setWindowFlags(m_baseFlags | Qt::WindowStaysOnTopHint);
-        } else {
-            setWindowFlags(m_baseFlags);
+        // Note: m_audioOutput will be set up later in constructor
+        // Note: window flags will be applied after UI is created
+        
+        // Update current time remaining to match loaded work duration
+        if (m_isWorkSession) {
+            m_timeRemaining = m_workDuration;
         }
     }
 }
@@ -173,6 +197,8 @@ void WorkTimer::saveSettings()
     // Appearance settings
     settings["current_theme"] = m_currentTheme;
     settings["pin_on_top"] = m_pinOnTop;
+    settings["show_in_taskbar"] = m_showInTaskbar;
+    settings["current_language"] = m_currentLanguage;
     
     // Sound settings
     settings["break_sound"] = m_breakSound;
@@ -204,9 +230,15 @@ void WorkTimer::playNotificationSound(bool isBreakNotification)
 
 QString WorkTimer::formatTime(int seconds)
 {
-    int minutes = seconds / 60;
+    int hours = seconds / 3600;
+    int minutes = (seconds % 3600) / 60;
     int secs = seconds % 60;
-    return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    
+    if (hours > 0) {
+        return QString("%1:%2:%3").arg(hours).arg(minutes, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    } else {
+        return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    }
 }
 
 void WorkTimer::updateDisplay()
@@ -214,12 +246,12 @@ void WorkTimer::updateDisplay()
     m_timeLabel->setText(formatTime(m_timeRemaining));
     
     if (m_isWorkSession) {
-        m_sessionLabel->setText(QString("Сессия %1 - Рабочее время").arg(m_currentSession));
+        m_sessionLabel->setText(tr("Session %1 - Work time").arg(m_currentSession));
     } else {
         if (m_currentSession % m_sessionsUntilLongBreak == 0) {
-            m_sessionLabel->setText(QString("Сессия %1 - Длинный перерыв").arg(m_currentSession));
+            m_sessionLabel->setText(tr("Session %1 - Long break").arg(m_currentSession));
         } else {
-            m_sessionLabel->setText(QString("Сессия %1 - Короткий перерыв").arg(m_currentSession));
+            m_sessionLabel->setText(tr("Session %1 - Short break").arg(m_currentSession));
         }
     }
 }
@@ -249,27 +281,34 @@ void WorkTimer::setupUI()
     m_longBreakTimeEdit = m_uiWidget->findChild<QTimeEdit*>("longBreakTimeEdit");
     m_sessionsSpinbox = m_uiWidget->findChild<QSpinBox*>("sessionsSpinbox");
     m_pinCheckbox = m_uiWidget->findChild<QCheckBox*>("pinCheckbox");
+    m_taskbarCheckbox = m_uiWidget->findChild<QCheckBox*>("taskbarCheckbox");
+    m_languageSwitch = m_uiWidget->findChild<QPushButton*>("languageSwitch");
     m_breakSoundCombo = m_uiWidget->findChild<QComboBox*>("breakSoundCombo");
     m_workSoundCombo = m_uiWidget->findChild<QComboBox*>("workSoundCombo");
     m_volumeSlider = m_uiWidget->findChild<QSlider*>("volumeSlider");
     
     
     
-    // Set initial values
-    m_timeLabel->setText(formatTime(m_timeRemaining));
-    m_sessionLabel->setText(QString("Сессия %1 - Рабочее время").arg(m_currentSession));
+    // Set initial values (will be updated by updateDisplay() at the end)
     
-    // Set time edit values (convert seconds to minutes and seconds)
-    m_workTimeEdit->setTime(QTime(0, m_workDuration / 60, m_workDuration % 60));
-    m_shortBreakTimeEdit->setTime(QTime(0, m_shortBreakDuration / 60, m_shortBreakDuration % 60));
-    m_longBreakTimeEdit->setTime(QTime(0, m_longBreakDuration / 60, m_longBreakDuration % 60));
+    // Set time edit values (convert seconds to hours, minutes and seconds)
+    m_workTimeEdit->setTime(QTime(m_workDuration / 3600, (m_workDuration % 3600) / 60, m_workDuration % 60));
+    m_shortBreakTimeEdit->setTime(QTime(m_shortBreakDuration / 3600, (m_shortBreakDuration % 3600) / 60, m_shortBreakDuration % 60));
+    m_longBreakTimeEdit->setTime(QTime(m_longBreakDuration / 3600, (m_longBreakDuration % 3600) / 60, m_longBreakDuration % 60));
     m_sessionsSpinbox->setValue(m_sessionsUntilLongBreak);
     
     // Set slider values
     m_volumeSlider->setValue(int(m_soundVolume * 100));
     
-    // Set checkbox state
+    // Set checkbox states
     m_pinCheckbox->setChecked(m_pinOnTop);
+    m_taskbarCheckbox->setChecked(m_showInTaskbar);
+    
+    // Set language switch
+    if (m_languageSwitch) {
+        m_languageSwitch->setText(m_currentLanguage.toUpper());
+        m_languageSwitch->setChecked(m_currentLanguage == "en");
+    }
     
     // Set combo box items
     m_breakSoundCombo->addItems(m_availableSounds);
@@ -299,7 +338,9 @@ void WorkTimer::setupUI()
     connect(m_resetButton, &QPushButton::clicked, this, &WorkTimer::resetTimer);
     connect(m_restartButton, &QPushButton::clicked, this, &WorkTimer::restartTimer);
     connect(m_toggleSettingsButton, &QPushButton::toggled, this, &WorkTimer::toggleSettings);
-    connect(m_minimizeButton, &QPushButton::clicked, this, &WorkTimer::minimizeToTray);
+    connect(m_minimizeButton, &QPushButton::clicked, this, [this]() { 
+        minimizeToTray(true); 
+    });
     connect(m_closeButton, &QPushButton::clicked, this, &WorkTimer::closeApplication);
     
     connect(m_themeButton, &QPushButton::clicked, this, [this]() { 
@@ -312,6 +353,8 @@ void WorkTimer::setupUI()
     connect(m_sessionsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &WorkTimer::updateSessionsUntilLongBreak);
     
     connect(m_pinCheckbox, &QCheckBox::stateChanged, this, &WorkTimer::updatePinOnTop);
+    connect(m_taskbarCheckbox, &QCheckBox::stateChanged, this, &WorkTimer::updateShowInTaskbar);
+    connect(m_languageSwitch, &QPushButton::clicked, this, &WorkTimer::switchLanguage);
     connect(m_breakSoundCombo, &QComboBox::currentTextChanged, this, &WorkTimer::updateBreakSound);
     connect(m_workSoundCombo, &QComboBox::currentTextChanged, this, &WorkTimer::updateWorkSound);
     connect(m_volumeSlider, &QSlider::valueChanged, this, &WorkTimer::updateVolume);
@@ -325,4 +368,99 @@ void WorkTimer::setupUI()
     // Setup animation targets after UI is loaded
     m_settingsAnimation->setTargetObject(m_settingsGroup);
     m_settingsAnimation->setPropertyName("geometry");
+    
+    // Update display with loaded values
+    updateDisplay();
+}
+
+void WorkTimer::loadTranslation()
+{
+    if (m_translator) {
+        QApplication::removeTranslator(m_translator);
+        
+        QString translationFile = QString(":/translations/worktimer_%1.qm").arg(m_currentLanguage);
+        
+        if (m_translator->load(translationFile)) {
+            QApplication::installTranslator(m_translator);
+        }
+    }
+}
+
+void WorkTimer::switchLanguage()
+{
+    m_currentLanguage = (m_currentLanguage == "ru") ? "en" : "ru";
+    loadTranslation();
+    
+    // Update UI text
+    retranslateUi();
+    
+    // Update language switch button
+    if (m_languageSwitch) {
+        m_languageSwitch->setText(m_currentLanguage.toUpper());
+        // Update checked state based on language
+        m_languageSwitch->setChecked(m_currentLanguage == "en");
+    }
+    
+    saveSettings();
+}
+
+void WorkTimer::retranslateUi()
+{
+    if (!m_uiWidget) return;
+    
+    // Update labels
+    QLabel* workDurationLabel = m_uiWidget->findChild<QLabel*>("workDurationLabel");
+    if (workDurationLabel) {
+        workDurationLabel->setText(tr("Work time"));
+    }
+    
+    QLabel* shortBreakLabel = m_uiWidget->findChild<QLabel*>("shortBreakLabel");
+    if (shortBreakLabel) {
+        shortBreakLabel->setText(tr("Short break"));
+    }
+    
+    QLabel* longBreakLabel = m_uiWidget->findChild<QLabel*>("longBreakLabel");
+    if (longBreakLabel) {
+        longBreakLabel->setText(tr("Long break"));
+    }
+    
+    QLabel* sessionsLabel = m_uiWidget->findChild<QLabel*>("sessionsLabel");
+    if (sessionsLabel) {
+        sessionsLabel->setText(tr("Sessions until long break"));
+    }
+    
+    QLabel* breakSoundLabel = m_uiWidget->findChild<QLabel*>("breakSoundLabel");
+    if (breakSoundLabel) {
+        breakSoundLabel->setText(tr("Break sound"));
+    }
+    
+    QLabel* workSoundLabel = m_uiWidget->findChild<QLabel*>("workSoundLabel");
+    if (workSoundLabel) {
+        workSoundLabel->setText(tr("Work sound"));
+    }
+    
+    // Update checkboxes
+    if (m_pinCheckbox) {
+        m_pinCheckbox->setText(tr("On top of all windows"));
+    }
+    
+    if (m_taskbarCheckbox) {
+        m_taskbarCheckbox->setText(tr("Show in taskbar"));
+    }
+    
+    // Update group box
+    if (m_settingsGroup) {
+        m_settingsGroup->setTitle(tr("Settings"));
+    }
+    
+    // Update tray menu
+    if (m_restoreAction) {
+        m_restoreAction->setText(tr("Show"));
+    }
+    if (m_quitAction) {
+        m_quitAction->setText(tr("Exit"));
+    }
+    
+    // Update display
+    updateDisplay();
 } 

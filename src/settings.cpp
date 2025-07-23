@@ -1,5 +1,5 @@
 #include "settings.h"
-#include <QDebug>
+
 
 bool Settings::loadSettings(const QString &filename, QJsonObject &settings)
 {

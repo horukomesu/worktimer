@@ -1,6 +1,6 @@
 #include "worktimer.h"
 #include <QApplication>
-#include <QDebug>
+
 
 // Timer control methods
 void WorkTimer::startTimer()
@@ -85,7 +85,6 @@ void WorkTimer::timerFinished()
 void WorkTimer::toggleSettings(bool checked)
 {
     if (!m_settingsGroup || !m_windowAnimation || !m_settingsAnimation || !m_animationGroup) {
-        qDebug() << "Animation components not initialized!";
         return;
     }
     
@@ -181,8 +180,8 @@ void WorkTimer::setupTrayIcon()
     
     // Create tray menu
     m_trayMenu = new QMenu(this);
-    m_restoreAction = new QAction("Показать", this);
-    m_quitAction = new QAction("Выход", this);
+    m_restoreAction = new QAction(tr("Show"), this);
+    m_quitAction = new QAction(tr("Exit"), this);
     
     m_trayMenu->addAction(m_restoreAction);
     m_trayMenu->addSeparator();
@@ -194,34 +193,50 @@ void WorkTimer::setupTrayIcon()
     connect(m_restoreAction, &QAction::triggered, this, &WorkTimer::restoreFromTray);
     connect(m_quitAction, &QAction::triggered, this, &WorkTimer::closeApplication);
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
-        if (reason == QSystemTrayIcon::DoubleClick) {
+        if (reason == QSystemTrayIcon::DoubleClick && !m_showInTaskbar) {
             restoreFromTray();
         }
     });
     
-    // Show tray icon
-    m_trayIcon->show();
+    // Show tray icon only if not showing in taskbar
+    if (!m_showInTaskbar) {
+        m_trayIcon->show();
+    }
 }
 
-void WorkTimer::minimizeToTray()
+void WorkTimer::minimizeToTray(bool showNotification)
 {
-    hide();
-    if (m_trayIcon) {
-        m_trayIcon->showMessage("Work Timer", "Приложение свернуто в трей", QSystemTrayIcon::Information, 2000);
+    if (m_showInTaskbar) {
+        // If showing in taskbar, just minimize normally
+        showMinimized();
+    } else {
+        // If not showing in taskbar, hide to tray
+        hide();
+        if (m_trayIcon && showNotification) {
+            m_trayIcon->showMessage(tr("Work Timer"), tr("Application minimized to tray"), QSystemTrayIcon::Information, 2000);
+        }
     }
 }
 
 void WorkTimer::restoreFromTray()
 {
-    show();
-    raise();
-    activateWindow();
+    if (m_showInTaskbar) {
+        // If showing in taskbar, just restore normally
+        showNormal();
+        raise();
+        activateWindow();
+    } else {
+        // If not showing in taskbar, show from tray
+        show();
+        raise();
+        activateWindow();
+    }
 }
 
 // Settings update methods
 void WorkTimer::updateWorkDuration(const QTime &time)
 {
-    m_workDuration = time.minute() * 60 + time.second();
+    m_workDuration = time.hour() * 3600 + time.minute() * 60 + time.second();
     if (m_isWorkSession && !m_isRunning) {
         m_timeRemaining = m_workDuration;
         updateDisplay();
@@ -231,13 +246,13 @@ void WorkTimer::updateWorkDuration(const QTime &time)
 
 void WorkTimer::updateShortBreakDuration(const QTime &time)
 {
-    m_shortBreakDuration = time.minute() * 60 + time.second();
+    m_shortBreakDuration = time.hour() * 3600 + time.minute() * 60 + time.second();
     saveSettings();
 }
 
 void WorkTimer::updateLongBreakDuration(const QTime &time)
 {
-    m_longBreakDuration = time.minute() * 60 + time.second();
+    m_longBreakDuration = time.hour() * 3600 + time.minute() * 60 + time.second();
     saveSettings();
 }
 
@@ -270,12 +285,44 @@ void WorkTimer::updateTheme(const QString &theme)
 void WorkTimer::updatePinOnTop(int state)
 {
     m_pinOnTop = (state == Qt::Checked);
+    
+    // Apply window flags based on settings
+    Qt::WindowFlags flags = m_baseFlags;
     if (m_pinOnTop) {
-        setWindowFlags(m_baseFlags | Qt::WindowStaysOnTopHint);
-    } else {
-        setWindowFlags(m_baseFlags);
+        flags |= Qt::WindowStaysOnTopHint;
     }
+    if (!m_showInTaskbar) {
+        flags |= Qt::Tool;
+    }
+    setWindowFlags(flags);
     show(); // Recreate window with new flags
+    saveSettings();
+}
+
+void WorkTimer::updateShowInTaskbar(int state)
+{
+    m_showInTaskbar = (state == Qt::Checked);
+    
+    // Apply window flags based on settings
+    Qt::WindowFlags flags = m_baseFlags;
+    if (m_pinOnTop) {
+        flags |= Qt::WindowStaysOnTopHint;
+    }
+    if (!m_showInTaskbar) {
+        flags |= Qt::Tool;
+    }
+    setWindowFlags(flags);
+    show(); // Recreate window with new flags
+    
+    // Show/hide tray icon based on taskbar setting
+    if (m_trayIcon) {
+        if (m_showInTaskbar) {
+            m_trayIcon->hide();
+        } else {
+            m_trayIcon->show();
+        }
+    }
+    
     saveSettings();
 }
 
@@ -397,7 +444,6 @@ void WorkTimer::applyStylesheet()
         setStyleSheet(stylesheet);
         file.close();
     } else {
-        qDebug() << "Failed to load stylesheet:" << styleFile;
         // Fallback to basic styling
         if (m_currentTheme == "dark") {
             setStyleSheet("QMainWindow { background-color: #2b2b2b; color: #ffffff; }");

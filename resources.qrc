@@ -4,6 +4,8 @@
         <file>ui/worktimer.ui</file>
         <file>styles/dark.qss</file>
         <file>styles/light.qss</file>
+        <file>translations/worktimer_ru.qm</file>
+        <file>translations/worktimer_en.qm</file>
     </qresource>
     <qresource prefix="/new/buttons">
         <file>ui/exit.svg</file>

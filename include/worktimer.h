@@ -31,6 +31,8 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QAction>
+#include <QTranslator>
+#include <QLocale>
 
 class WorkTimer : public QMainWindow
 {
@@ -55,7 +57,7 @@ private slots:
     void timerFinished();
     void toggleSettings(bool checked = false);
     void closeApplication();
-    void minimizeToTray();
+    void minimizeToTray(bool showNotification = true);
     void restoreFromTray();
     
     void updateWorkDuration(const QTime &time);
@@ -64,6 +66,8 @@ private slots:
     void updateSessionsUntilLongBreak(int value);
     void updateTheme(const QString &theme);
     void updatePinOnTop(int state);
+    void updateShowInTaskbar(int state);
+    void switchLanguage();
     void updateAllIcons();
     void updateBreakSound(const QString &soundName);
     void updateWorkSound(const QString &soundName);
@@ -74,6 +78,8 @@ private:
     void setupUI();
     void applyStylesheet();
     void loadSettings();
+    void loadTranslation();
+    void retranslateUi();
     void saveSettings();
     void loadSounds();
     void playNotificationSound(bool isBreakNotification = true);
@@ -95,6 +101,8 @@ private:
     // Appearance settings
     QString m_currentTheme = "dark";
     bool m_pinOnTop = true;
+    bool m_showInTaskbar = true;
+    QString m_currentLanguage = "ru";
     
     // Sound settings
     QString m_soundsFolder = "sounds";
@@ -139,6 +147,8 @@ private:
     QTimeEdit *m_longBreakTimeEdit;
     QSpinBox *m_sessionsSpinbox;
     QCheckBox *m_pinCheckbox;
+    QCheckBox *m_taskbarCheckbox;
+    QPushButton *m_languageSwitch;
     QComboBox *m_breakSoundCombo;
     QComboBox *m_workSoundCombo;
     QSlider *m_volumeSlider;
@@ -156,4 +166,7 @@ private:
     QMenu *m_trayMenu;
     QAction *m_restoreAction;
     QAction *m_quitAction;
+    
+    // Translation
+    QTranslator *m_translator;
 }; 

@@ -316,14 +316,14 @@
       <item row="0" column="0">
        <widget class="QLabel" name="workDurationLabel">
         <property name="text">
-         <string>Рабочее время (мин)</string>
+         <string>Рабочее время</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QTimeEdit" name="workTimeEdit">
         <property name="displayFormat">
-         <string>m:ss</string>
+         <string>H:mm:ss</string>
         </property>
         <property name="time">
          <time>
@@ -337,14 +337,14 @@
       <item row="1" column="0">
        <widget class="QLabel" name="shortBreakLabel">
         <property name="text">
-         <string>Короткий перерыв (мин)</string>
+         <string>Короткий перерыв</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
        <widget class="QTimeEdit" name="shortBreakTimeEdit">
         <property name="displayFormat">
-         <string>m:ss</string>
+         <string>H:mm:ss</string>
         </property>
         <property name="time">
          <time>
@@ -358,14 +358,14 @@
       <item row="2" column="0">
        <widget class="QLabel" name="longBreakLabel">
         <property name="text">
-         <string>Длинный перерыв (мин)</string>
+         <string>Длинный перерыв</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
        <widget class="QTimeEdit" name="longBreakTimeEdit">
         <property name="displayFormat">
-         <string>m:ss</string>
+         <string>H:mm:ss</string>
         </property>
         <property name="time">
          <time>
@@ -442,17 +442,59 @@
      </layout>
     </item>
     <item>
-     <widget class="QCheckBox" name="pinCheckbox">
-      <property name="text">
-       <string>Поверх всех окон</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-      <property name="tristate">
-       <bool>false</bool>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="checkboxLayout">
+      <item>
+       <widget class="QCheckBox" name="pinCheckbox">
+        <property name="text">
+         <string>Поверх всех окон</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="taskbarCheckbox">
+        <property name="text">
+         <string>Отображать в панели задач</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="languageSwitch">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>RU</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
